@@ -224,7 +224,7 @@ void initialize() {
     2 - skills
     3 - SAWP
 */
-int chosenAuton = 2;
+int chosenAuton = 3;
 
 void autonomous() {
     switch(chosenAuton){
@@ -495,12 +495,18 @@ void opcontrol() {
         } else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2)) {
             mainIntake.move(-127);
             counterRoller.move(-127);
+        } else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_Y)){
+            mainIntake.move(60);
+            counterRoller.move(-30);
+        } else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_RIGHT)) {
+            mainIntake.move(-70);
+            counterRoller.move(-50);
         } else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_B)) {
             wingUp = !wingUp;
-            pros::delay(250);
-        } else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_A)) { 
+            pros::delay(150);
+        } else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN)) { 
             tongueOut = !tongueOut;
-            pros::delay(250);
+            pros::delay(150);
         } else {
 			intakeAll = false;
             midGoalAll = false;
