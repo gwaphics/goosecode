@@ -166,11 +166,11 @@ void midScore(std::string clr) {
 }
 void midScore() {
     mainIntake.move(100);
-    counterRoller.move(-80);
+    counterRoller.move(-127);
 }
 
 void lowScore() {
-    mainIntake.move(-127);
+    mainIntake.move(-60);
     counterRoller.move(-127);
 }
 
@@ -269,15 +269,15 @@ void autonomous() {
             chassis.waitUntilDone();
             chassis.moveToPoint(-70, 52, 3000, {.forwards = false, .maxSpeed = 80});
             chassis.waitUntilDone(); 
-            chassis.moveToPoint(-80, 40, 1000, {.forwards = false});
+            chassis.moveToPoint(-80, 38, 1000, {.forwards = false});
             chassis.waitUntilDone();
             chassis.turnToHeading(270, 750);
             chassis.waitUntilDone();
-            chassis.moveToPoint(-57, 39, 1000, {.forwards = false});
+            chassis.moveToPoint(-57, 37, 1000, {.forwards = false});
             chassis.waitUntilDone();
             hood.set_value(true);
             hoodUp = true;
-            chassis.moveToPoint(-57, 39, 1500, {.forwards = false});
+            chassis.moveToPoint(-60, 37, 1500, {.forwards = false});
             chassis.waitUntilDone();
             chassis.turnToHeading(270, 750);
             chassis.setPose(0, 0, 270);
@@ -296,7 +296,7 @@ void autonomous() {
             hoodUp = true;
             hood.set_value(true);
             tongue.set_value(false);
-            chassis.moveToPoint(5, 0, 1500, {.forwards = false, .maxSpeed = 80});
+            chassis.moveToPoint(8, 0, 1500, {.forwards = false, .maxSpeed = 80});
             chassis.waitUntilDone();
             chassis.turnToHeading(270, 750);
             chassis.setPose(0, 0, 270);
@@ -410,20 +410,20 @@ void autonomous() {
             break;
         case 3:
             chassis.setPose(0,0,0);
-            intakeAll = true;
-            chassis.moveToPoint(0, 10, 500);
-            chassis.moveToPoint(0, -38, 1300, {.forwards = false, .maxSpeed = 90});
+            intakeRed = true;
+            //chassis.moveToPoint(0, 10, 750);
+            chassis.moveToPoint(0, -37, 1300, {.forwards = false, .maxSpeed = 90});
             chassis.turnToHeading(270, 750);
             chassis.waitUntilDone();
             tongue.set_value(true);
-            pros::delay(50);
-            chassis.moveToPoint(-15, -39, 1100, {.maxSpeed = 70});
+            pros::delay(200);
+            chassis.moveToPoint(-15, -38, 1100, {.maxSpeed = 70});
             chassis.moveToPoint(17, -39, 700,{.forwards = false});
             chassis.waitUntilDone();
             tongue.set_value(false);
             hood.set_value(true);
             hoodUp = true;
-            chassis.moveToPoint(17, -40, 800,{.forwards = false, .maxSpeed = 70});
+            chassis.moveToPoint(20, -40, 800,{.forwards = false, .maxSpeed = 70});
             chassis.setPose(0,0, 270);
             
             chassis.turnToHeading(0, 900);
@@ -434,36 +434,39 @@ void autonomous() {
             
             chassis.turnToHeading(0, 300);
             
-            chassis.moveToPoint(0, 45, 550);
-            chassis.moveToPoint(0.5, 65, 800, {.maxSpeed = 40});
-            
-            chassis.turnToHeading(-35, 500);
+            chassis.moveToPoint(0, 55, 800);//change
+            chassis.moveToPoint(0.5, 65, 550, {.maxSpeed = 40});
             chassis.waitUntilDone();
-            intakeAll = false;
-            mainIntake.move(-127);
-            counterRoller.move(-127);
-            pros::delay(50);
-            chassis.moveToPoint(13, 50, 650,{.forwards = false, .maxSpeed = 90});
+            tongue.set_value(true);
+            chassis.turnToHeading(-50, 500);
+            chassis.waitUntilDone();
+            intakeRed = false;
+            chassis.moveToPoint(15, 52, 650,{.forwards = false, .maxSpeed = 90});//change
             
             chassis.waitUntilDone();
-            mainIntake.move(0);
-            counterRoller.move(0);
+            lowGoal = true;
+            pros::delay(200);
+            lowGoal = false;
             midGoalAll = true;
-            pros::delay(500);
+            pros::delay(900);
             midGoalAll = false;
+            tongue.set_value(false);
+
             chassis.moveToPoint(-25, 85, 1150, {.maxSpeed = 90});
-            intakeAll = true;
+            intakeRed = true;
             chassis.waitUntilDone();
             tongue.set_value(true);
             chassis.turnToHeading(270, 700, {.maxSpeed = 70});
             
-            chassis.moveToPoint(-45, 85, 1100, {.maxSpeed = 80});
-            chassis.moveToPoint(20, 86, 550, {.forwards = false});
+            chassis.moveToPoint(-45, 85, 1100, {.maxSpeed = 60});
+            chassis.turnToHeading(250, 200);
+            chassis.moveToPoint(0, 89, 800, {.forwards = false});
+          
             chassis.waitUntilDone();
             tongue.set_value(false);
             hood.set_value(true);
             hoodUp = true;
-            chassis.moveToPoint(20, 86, 1500, {.forwards = false});
+            chassis.moveToPoint(5, 97, 1500, {.forwards = false});
 
 
 
@@ -501,6 +504,8 @@ void autonomous() {
 void opcontrol() {
     bool tongueOut = false;
     bool wingUp = false;
+    bool doubleOut = false;
+    bool gatesOut = false;
 
     // loop forever
     while (true) {
@@ -554,11 +559,17 @@ void opcontrol() {
             mainIntake.move(-127);
             counterRoller.move(-127);
         } else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_Y)){
-            mainIntake.move(60);
-            counterRoller.move(-30);
+            mainIntake.move(37);
+            counterRoller.move(-20);
         } else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_RIGHT)) {
             mainIntake.move(-70);
             counterRoller.move(-50);
+        } else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_B)) {
+            wingUp = !wingUp;
+            pros::delay(150);
+        } else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN)) { 
+            tongueOut = !tongueOut;
+            pros::delay(150);
         } else {
 			intakeAll = false;
             midGoalAll = false;
@@ -569,14 +580,6 @@ void opcontrol() {
             hood.set_value(false);
             hoodUp = false;
 		}
-        
-        if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_B)) {
-            wingUp = !wingUp;
-            pros::delay(150);
-        } else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN)) { 
-            tongueOut = !tongueOut;
-            pros::delay(150);
-        }
 
         if (wingUp) {
             wing.set_value(true);
