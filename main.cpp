@@ -1,4 +1,5 @@
 #include "main.h"
+#include "lemlib/chassis/chassis.hpp"
 #include "pros/distance.hpp"
 #include "pros/misc.h"
 #include "pros/motors.hpp"
@@ -10,7 +11,9 @@
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
+#include <iostream>
 #include <string>
+#include <sys/types.h>
 using namespace std;
 using namespace pros;
 pros::Controller controller(pros::E_CONTROLLER_MASTER);
@@ -19,19 +22,20 @@ pros::MotorGroup leftMotors({-18, -19, -14}, pros::MotorGearset::blue); // left 
 pros::MotorGroup rightMotors({11, 2,13}, pros::MotorGearset::blue); // right motors
 // other motors
 pros::Motor counterRoller(5, pros::MotorGearset::green);
-pros::MotorGroup mainIntake({-1, -3}, pros::MotorGearset::green);
+pros::MotorGroup mainIntake({-1, 3}, pros::MotorGearset::green);
 bool load = false;
 bool unload = false;
 // sensors
 pros::Distance frontDS(16);
-pros::Distance backDS(15);
-pros::Distance rightDS(10);
+pros::Distance backDS(10);
+pros::Distance rightDS(15);
 pros::Distance leftDS(7);
 pros::Optical colorSense(4);
 // pnaumatics
 pros::adi::DigitalOut tongue('C');
 pros::adi::DigitalOut wing('B');
-pros::adi::DigitalOut hood('A');
+pros::adi::DigitalOut hood('D');
+
 
 bool stopSkills = false;
 // drivetrain settings
@@ -174,6 +178,8 @@ void lowScore() {
     counterRoller.move(-127);
 }
 
+bool update = true;
+
 time_t lastChange = time_t();
 void initialize() {
     pros::lcd::initialize(); // initialize brain screen
@@ -191,8 +197,10 @@ void initialize() {
             pros::lcd::print(1, "Y: %f", chassis.getPose().y); // y*/
             pros::lcd::print(2, "Theta: %f", chassis.getPose().theta); // heading
             //string toPrint = "(" + to_string((int)chassis.getPose().x) + "," + to_string((int)chassis.getPose().y) + "," + to_string((int)chassis.getPose().theta) + ")";
-            string toPrint = to_string(frontDS.get()) + " " + to_string(rightDS.get()) + "          ";
-            controller.set_text(0,0,toPrint);
+
+            // string toPrint = to_string(frontDS.get()) + " " + to_string(rightDS.get()) + "          ";
+            // controller.set_text(0,0,toPrint);
+
             // delay to save resources
             pros::delay(50);
             
@@ -214,6 +222,15 @@ void initialize() {
                 mainIntake.move(0);
                 counterRoller.move(0);
             }
+
+            if (update) {
+                if (chassis.getPose().theta >= 88 && chassis.getPose().theta <= 92) {
+                    chassis.setPose(144 - frontDS.get_distance()/25.4 - 2, rightDS.get_distance()/25.4 + 4.5, chassis.getPose().theta); // rightDS.get_distance()/25.4 + 5
+                } else if (chassis.getPose().theta > 177 && chassis.getPose().theta <= 182) {
+                    chassis.setPose(144 - leftDS.get_distance()/25.4 - 4.5, frontDS.get_distance()/25.4 + 2, chassis.getPose().theta);
+                }
+            }
+            
         }
     });
 }
@@ -233,27 +250,94 @@ void initialize() {
 // position reset w/ distance sensors (using two walls closest to bot when facing any direction in each quadrant)
 int quadrant = 1;
 void reset() {
+    double measuredX = 0;
+    double measuredY = 0;
+
+    // bottom right quadrant
+    if (chassis.getPose().theta > 315 && chassis.getPose().theta <= 45 && quadrant == 1) {
+        measuredX = rightDS.get_distance()/25.4 - 5;
+        measuredY = backDS.get_distance()/25.4 + 2;
+    } else if (chassis.getPose().theta > 45 && chassis.getPose().theta <= 135 && quadrant == 1) {
+        measuredX = frontDS.get_distance()/25.4 - 2;
+        measuredY = rightDS.get_distance()/25.4 + 5;
+    } else if (chassis.getPose().theta > 135 && chassis.getPose().theta <= 225 && quadrant == 1) {
+        measuredX = leftDS.get_distance()/25.4 - 5;
+        measuredY = frontDS.get_distance()/25.4 + 2;
+    } else if (chassis.getPose().theta > 225 && chassis.getPose().theta <= 315 && quadrant == 1) {
+        measuredX = backDS.get_distance()/25.4 - 2;
+        measuredY = leftDS.get_distance()/25.4 + 5;
+    }
+    // top right quadrant
+    if (chassis.getPose().theta > 315 && chassis.getPose().theta <= 45 && quadrant == 2) {
+        measuredX = rightDS.get_distance()/25.4;
+        measuredY = frontDS.get_distance()/25.4;
+    } else if (chassis.getPose().theta > 45 && chassis.getPose().theta <= 135 && quadrant == 2) {
+        measuredX = frontDS.get_distance()/25.4;
+        measuredY = leftDS.get_distance()/25.4;
+    } else if (chassis.getPose().theta > 135 && chassis.getPose().theta <= 225 && quadrant == 2) {
+        measuredX = leftDS.get_distance()/25.4;
+        measuredY = backDS.get_distance()/25.4;
+    } else if (chassis.getPose().theta > 225 && chassis.getPose().theta <= 315 && quadrant == 2) {
+        measuredX = backDS.get_distance()/25.4;
+        measuredY = rightDS.get_distance()/25.4;
+    }
+    // top left quadrant
+    if (chassis.getPose().theta > 315 && chassis.getPose().theta <= 45 && quadrant == 3) {
+        measuredX = leftDS.get_distance()/25.4;
+        measuredY = frontDS.get_distance()/25.4;
+    } else if (chassis.getPose().theta > 45 && chassis.getPose().theta <= 135 && quadrant == 3) {
+        measuredX = backDS.get_distance()/25.4;
+        measuredY = leftDS.get_distance()/25.4;
+    } else if (chassis.getPose().theta > 135 && chassis.getPose().theta <= 225 && quadrant == 3) {
+        measuredX = rightDS.get_distance()/25.4;
+        measuredY = backDS.get_distance()/25.4;
+    } else if (chassis.getPose().theta > 225 && chassis.getPose().theta <= 315 && quadrant == 3) {
+        measuredX = frontDS.get_distance()/25.4;
+        measuredY = rightDS.get_distance()/25.4;
+    }
+    // bottom left quadrant
+    if (chassis.getPose().theta > 315 && chassis.getPose().theta <= 45 && quadrant == 4) {
+        measuredX = leftDS.get_distance()/25.4;
+        measuredY = backDS.get_distance()/25.4;
+    } else if (chassis.getPose().theta > 45 && chassis.getPose().theta <= 135 && quadrant == 4) {
+        measuredX = backDS.get_distance()/25.4;
+        measuredY = rightDS.get_distance()/25.4;
+    } else if (chassis.getPose().theta > 135 && chassis.getPose().theta <= 225 && quadrant == 4) {
+        measuredX = rightDS.get_distance()/25.4;
+        measuredY = frontDS.get_distance()/25.4;
+    } else if (chassis.getPose().theta > 225 && chassis.getPose().theta <= 315 && quadrant == 4) {
+        measuredX = frontDS.get_distance()/25.4;
+        measuredY = leftDS.get_distance()/25.4;
+    }
+
+    double errorX = fabs(measuredX - chassis.getPose().x);
+    double errorY = fabs(measuredY - chassis.getPose().y);
+
+    if (errorX > 3 || errorY > 3) {
+        return; // do not reset if error is too large
+    }
+
     if (quadrant == 1) {
         // bottom right quadrant
         if (chassis.getPose().theta > 315 && chassis.getPose().theta <= 45) {
             chassis.turnToHeading(0, 250);
             chassis.waitUntilDone();
-            chassis.setPose(rightDS.get_distance()/25.4, backDS.get_distance()/25.4, chassis.getPose().theta);
+            chassis.setPose(measuredX, measuredY, chassis.getPose().theta);
             pros::delay(50);
         } else if (chassis.getPose().theta > 45 && chassis.getPose().theta <= 135) {
             chassis.turnToHeading(90, 250);
             chassis.waitUntilDone();
-            chassis.setPose(frontDS.get_distance()/25.4, rightDS.get_distance()/25.4, chassis.getPose().theta);
+            chassis.setPose(measuredX, measuredY, chassis.getPose().theta);
             pros::delay(50);
         } else if (chassis.getPose().theta > 135 && chassis.getPose().theta <= 225) {
             chassis.turnToHeading(180, 250);
             chassis.waitUntilDone();
-            chassis.setPose(leftDS.get_distance()/25.4, frontDS.get_distance()/25.4, chassis.getPose().theta);
+            chassis.setPose(measuredX, measuredY, chassis.getPose().theta);
             pros::delay(50);
         } else if (chassis.getPose().theta > 225 && chassis.getPose().theta <= 315) {
             chassis.turnToHeading(270, 250);
             chassis.waitUntilDone();
-            chassis.setPose(backDS.get_distance()/25.4, leftDS.get_distance()/25.4, chassis.getPose().theta);
+            chassis.setPose(measuredX, measuredY, chassis.getPose().theta);
             pros::delay(50);
         }
     } else if (quadrant == 2) {
@@ -261,22 +345,22 @@ void reset() {
         if (chassis.getPose().theta > 315 && chassis.getPose().theta <= 45) {
             chassis.turnToHeading(0, 250);
             chassis.waitUntilDone();
-            chassis.setPose(rightDS.get_distance()/25.4, frontDS.get_distance()/25.4, chassis.getPose().theta);
+            chassis.setPose(measuredX, measuredY, chassis.getPose().theta);
             pros::delay(50);
         } else if (chassis.getPose().theta > 45 && chassis.getPose().theta <= 135) {
             chassis.turnToHeading(90, 250);
             chassis.waitUntilDone();
-            chassis.setPose(frontDS.get_distance()/25.4, leftDS.get_distance()/25.4, chassis.getPose().theta);
+            chassis.setPose(measuredX, measuredY, chassis.getPose().theta);
             pros::delay(50);
         } else if (chassis.getPose().theta > 135 && chassis.getPose().theta <= 225) {
             chassis.turnToHeading(180, 250);
             chassis.waitUntilDone();
-            chassis.setPose(leftDS.get_distance()/25.4, backDS.get_distance()/25.4, chassis.getPose().theta);
+            chassis.setPose(measuredX, measuredY, chassis.getPose().theta);
             pros::delay(50);
         } else if (chassis.getPose().theta > 225 && chassis.getPose().theta <= 315) {
             chassis.turnToHeading(270, 250);
             chassis.waitUntilDone();
-            chassis.setPose(backDS.get_distance()/25.4, rightDS.get_distance()/25.4, chassis.getPose().theta);
+            chassis.setPose(measuredX, measuredY, chassis.getPose().theta);
             pros::delay(50);
         }
     } else if (quadrant == 3) {
@@ -284,22 +368,22 @@ void reset() {
         if (chassis.getPose().theta > 315 && chassis.getPose().theta <= 45) {
             chassis.turnToHeading(0, 250);
             chassis.waitUntilDone();
-            chassis.setPose(leftDS.get_distance()/25.4, frontDS.get_distance()/25.4, chassis.getPose().theta);
+            chassis.setPose(measuredX, measuredY, chassis.getPose().theta);
             pros::delay(50);
         } else if (chassis.getPose().theta > 45 && chassis.getPose().theta <= 135) {
             chassis.turnToHeading(90, 250);
             chassis.waitUntilDone();
-            chassis.setPose(backDS.get_distance()/25.4, leftDS.get_distance()/25.4, chassis.getPose().theta);
+            chassis.setPose(measuredX, measuredY, chassis.getPose().theta);
             pros::delay(50);
         } else if (chassis.getPose().theta > 135 && chassis.getPose().theta <= 225) {
             chassis.turnToHeading(180, 250);
             chassis.waitUntilDone();
-            chassis.setPose(rightDS.get_distance()/25.4, backDS.get_distance()/25.4, chassis.getPose().theta);
+            chassis.setPose(measuredX, measuredY, chassis.getPose().theta);
             pros::delay(50);
         } else if (chassis.getPose().theta > 225 && chassis.getPose().theta <= 315) {
             chassis.turnToHeading(270, 250);
             chassis.waitUntilDone();
-            chassis.setPose(frontDS.get_distance()/25.4, rightDS.get_distance()/25.4, chassis.getPose().theta);
+            chassis.setPose(measuredX, measuredY, chassis.getPose().theta);
             pros::delay(50);
         }
     } else if (quadrant == 4) {
@@ -307,28 +391,89 @@ void reset() {
         if (chassis.getPose().theta > 315 && chassis.getPose().theta <= 45) {
             chassis.turnToHeading(0, 250);
             chassis.waitUntilDone();
-            chassis.setPose(leftDS.get_distance()/25.4, backDS.get_distance()/25.4, chassis.getPose().theta);
+            chassis.setPose(measuredX, measuredY, chassis.getPose().theta);
             pros::delay(50);
         } else if (chassis.getPose().theta > 45 && chassis.getPose().theta <= 135) {
             chassis.turnToHeading(90, 250);
             chassis.waitUntilDone();
-            chassis.setPose(backDS.get_distance()/25.4, rightDS.get_distance()/25.4, chassis.getPose().theta);
+            chassis.setPose(measuredX, measuredY, chassis.getPose().theta);
             pros::delay(50);
         } else if (chassis.getPose().theta > 135 && chassis.getPose().theta <= 225) {
             chassis.turnToHeading(180, 250);
             chassis.waitUntilDone();
-            chassis.setPose(rightDS.get_distance()/25.4, frontDS.get_distance()/25.4, chassis.getPose().theta);
+            chassis.setPose(measuredX, measuredY, chassis.getPose().theta);
             pros::delay(50);
         } else if (chassis.getPose().theta > 225 && chassis.getPose().theta <= 315) {
             chassis.turnToHeading(270, 250);
             chassis.waitUntilDone();
-            chassis.setPose(frontDS.get_distance()/25.4, leftDS.get_distance()/25.4, chassis.getPose().theta);
+            chassis.setPose(measuredX, measuredY, chassis.getPose().theta);
             pros::delay(50);
         }
     }
     
 }
 
+double fieldSize = 144.0;
+
+double frontDSOffset = 2; 
+double backDSOffset = 2; 
+double leftDSOffset = 5; 
+double rightDSOffset = 5; 
+
+double fromRight = 0;
+double fromBack = 0;
+
+void rst() {
+    if (quadrant == 1) {
+        if (chassis.getPose().theta > 315 || chassis.getPose().theta <= 45) {
+            fromRight = rightDS.get_distance()/25.4 + 2;
+            fromBack = backDS.get_distance()/25.4 + 5;
+        } else if (chassis.getPose().theta > 45 && chassis.getPose().theta <= 135) {
+            fromRight = frontDS.get_distance()/25.4 + 2;
+            fromBack = rightDS.get_distance()/25.4 + 5;
+        } else if (chassis.getPose().theta > 135 && chassis.getPose().theta <= 225) {
+            fromRight = leftDS.get_distance()/25.4 + 5;
+            fromBack = frontDS.get_distance()/25.4 + 2;
+        } else if (chassis.getPose().theta > 225 && chassis.getPose().theta <= 315) {
+            fromRight = backDS.get_distance()/25.4 + 2;
+            fromBack = leftDS.get_distance()/25.4 + 5;
+        }
+    }
+}
+
+double errorX() {
+    if (quadrant == 1) {
+        if (chassis.getPose().theta > 315 || chassis.getPose().theta <= 45) {
+            return (fromRight - rightDS.get_distance()/25.4 - 2) - chassis.getPose().x;
+        } else if (chassis.getPose().theta > 45 && chassis.getPose().theta <= 135) {
+            return (fromRight - frontDS.get_distance()/25.4 - 2) - chassis.getPose().x;
+        } else if (chassis.getPose().theta > 135 && chassis.getPose().theta <= 225) {
+            return (fromRight - leftDS.get_distance()/25.4 - 5) - chassis.getPose().x;
+        } else if (chassis.getPose().theta > 225 && chassis.getPose().theta <= 315) {
+            return (fromRight - backDS.get_distance()/25.4 - 2) - chassis.getPose().x;
+        }
+    }
+    return 0;
+}
+
+double errorY() {
+    if (quadrant == 1) {
+        if (chassis.getPose().theta > 315 || chassis.getPose().theta <= 45) {
+            return (fromBack - backDS.get_distance()/25.4 + 5) - chassis.getPose().y;
+        } else if (chassis.getPose().theta > 45 && chassis.getPose().theta <= 135) {
+            return (fromBack - rightDS.get_distance()/25.4 + 5) - chassis.getPose().y;
+        } else if (chassis.getPose().theta > 135 && chassis.getPose().theta <= 225) {
+            return (fromBack - frontDS.get_distance()/25.4 + 2) - chassis.getPose().y;
+        } else if (chassis.getPose().theta > 225 && chassis.getPose().theta <= 315) {
+            return (fromBack - leftDS.get_distance()/25.4 + 5) - chassis.getPose().y;
+        }
+    }
+    return 0;
+}
+
+double fromRightWall(double inches) { return fieldSize - inches - frontDSOffset; } // 144 - 20 + 2 = 126
+double fromBackWall(double inches) { return inches + rightDSOffset; } // 13 + 5 = 18
+// (126, 18)
 
 /* 
     0 - lateral PID test
@@ -342,7 +487,7 @@ void reset() {
     8 - elims w box bots
     9 - distance sensor test
 */
-int chosenAuton = 4;
+int chosenAuton = 3;
 
 void autonomous() {
     switch(chosenAuton){
@@ -363,19 +508,51 @@ void autonomous() {
             // chassis.setPose(frontDS.get_distance(), leftDS.get_distance(), 270);
 
             // chassis.moveToPoint(frontDS.get_distance()+30, leftDS.get_distance(), 10000);
+
+            // ####################################
+            // FROM A DIFF TEST REGARDING SAME TYPE OF THING
+            // chassis.setPose(fromRightWall(frontDS.get_distance()/25.4), fromBackWall(rightDS.get_distance()/25.4), 90);
+            // // (96, 18)
+            // chassis.moveToPoint(fromRightWall(20), fromBackWall(13), 2000);
+            // // (126, 25)
+            // ####################################
+
             break;
         case 3:
-            // chassis.setPose(frontDS.get_distance(), leftDS.get_distance(), 270);
+            chassis.setPose(144-frontDS.get_distance()/25.4 - 2,rightDS.get_distance()/25.4 + 4.5, 90);
 
-            // movePoint(-30, 0, 10000);
+            chassis.moveToPoint(144-24, chassis.getPose().y, 1000, {.maxSpeed = 80});
+            chassis.waitUntilDone();
+            update = false;
+            chassis.turnToHeading(180, 750);
+            tongue.set_value(true);
+            chassis.waitUntilDone();
+            intakeAll = true;
+            update = true;
+            chassis.moveToPoint(144-24, 12, 3000);
+            chassis.waitUntilDone();
+            chassis.moveToPoint(144-24, 45, 1500, {.forwards = false, .maxSpeed = 80});
+            chassis.waitUntilDone();
+            hood.set_value(true);
+            hoodUp = true;
             break;
-        case 4:
+        case 4: {
             // testing
-            chassis.setPose(frontDS.get_distance()/25.4,rightDS.get_distance()/25.4,90);
+            chassis.setPose(144-frontDS.get_distance()/25.4 - 2,rightDS.get_distance()/25.4 + 5,90);
             quadrant = 1;
+            double wallX = frontDS.get_distance()/25.4 - 2;
+            double wallY = rightDS.get_distance()/25.4 + 5;
 
             // move to match loader
-            chassis.moveToPoint(chassis.getPose().x+27, chassis.getPose().y, 2000);
+            // controller.set_text(0,0,to_string(chassis.getPose().x)); // 53.15
+            // pros::delay(1000);
+            // controller.set_text(0,0,to_string(chassis.getPose().y)); // 17.40
+            // pros::delay(1000);
+            // controller.set_text(0,0,to_string(wallX)); // 90.85
+            // pros::delay(1000);
+            // controller.set_text(0,0,to_string(wallY)); // 17.40
+            // pros::delay(1000);
+            chassis.moveToPoint(144-20, wallY, 2000, {.maxSpeed = 80});
             chassis.waitUntilDone();
             chassis.turnToHeading(180, 500);
             chassis.waitUntilDone();
@@ -383,15 +560,30 @@ void autonomous() {
 
             // get balls out of match loader
             // tongue.set_value(true);
-            chassis.moveToPoint(chassis.getPose().x, chassis.getPose().y-8, 2000);
+            chassis.moveToPoint(144-20, wallY-8, 2000);
             chassis.waitUntilDone();
             reset();
 
             // score on long goal
-            chassis.moveToPoint(chassis.getPose().x-1, chassis.getPose().y+30, 2000, {.forwards = false});
+            chassis.moveToPoint(144-20, wallY+20, 2000, {.forwards = false});
 
+            // quadrant = 1;
+            // fromRight = frontDS.get_distance()/25.4 + 2;
+            // fromBack = rightDS.get_distance()/25.4 + 5;
+
+            // chassis.setPose(0, 0, 90);
+
+            // chassis.moveToPoint(30, 0, 2000);
+            // chassis.waitUntilDone();
+            // chassis.turnToHeading(180, 1000);
+            // chassis.waitUntilDone();
+            // chassis.moveToPoint(30 - errorX(), -8 - errorY(), 2000);
+            // chassis.waitUntilDone();
+            // // rst();
+            // // chassis.moveToPoint(30 + errorX(), 20 + errorY(), 2000, {.forwards = false});
 
             break;
+        }
         case 5:
         // skills
             color = "none";
