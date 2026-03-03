@@ -18,24 +18,24 @@ using namespace std;
 using namespace pros;
 pros::Controller controller(pros::E_CONTROLLER_MASTER);
 // dt motors
-pros::MotorGroup leftMotors({-18, -19, -14}, pros::MotorGearset::blue); // left motors
-pros::MotorGroup rightMotors({11, 2,13}, pros::MotorGearset::blue); // right motors
+pros::MotorGroup leftMotors({-15, -16, -20}, pros::MotorGearset::blue); // left motors
+pros::MotorGroup rightMotors({13, 14,18}, pros::MotorGearset::blue); // right motors
 // other motors
-pros::Motor counterRoller(5, pros::MotorGearset::green);
-pros::MotorGroup mainIntake({-1, 3}, pros::MotorGearset::green);
+pros::Motor counterRoller(6, pros::MotorGearset::green);
+pros::MotorGroup mainIntake({5, -12}, pros::MotorGearset::green);
 bool load = false;
 bool unload = false;
 // sensors
-pros::Distance frontDS(16);
-pros::Distance backDS(10);
-pros::Distance rightDS(15);
-pros::Distance leftDS(7);
-pros::Optical colorSense(4);
+pros::Distance frontDS(4);
+//pros::Distance backDS(10);
+pros::Distance rightDS(9);
+pros::Distance leftDS(21);
+pros::Optical colorSense(19);
 // pnaumatics
 pros::adi::DigitalOut tongue('C');
-pros::adi::DigitalOut wing('B');
-pros::adi::DigitalOut hood('D');
-pros::adi::DigitalOut firstStage('E');
+pros::adi::DigitalOut wing('A');
+pros::adi::DigitalOut hood('F');
+pros::adi::DigitalOut firstStage('D');
 
 
 bool stopSkills = false;
@@ -48,9 +48,9 @@ lemlib::Drivetrain drivetrain(&leftMotors, // left motor group
                               0 // horizontal drift is 2 (for now)
 );
 // create an imu on port 3
-pros::Imu imu1(6);
+pros::Imu imu1(11);
 // create a v5 rotation sensor on port 1
-pros::Rotation vertical_encoder(8);
+pros::Rotation vertical_encoder(7);
 // horizontal tracking wheel
 lemlib::TrackingWheel vertical_tracking_wheel(&vertical_encoder, lemlib::Omniwheel::NEW_2,0);
 lemlib::OdomSensors sensors(&vertical_tracking_wheel, // vertical tracking wheel 1, set to null
@@ -205,6 +205,7 @@ time_t lastChange = time_t();
 void initialize() {
     pros::lcd::initialize(); // initialize brain screen
     chassis.calibrate(); // calibrate sensors
+    chassis.setPose(0, 0, 0);
     //intake();
     //antiJam();
     // print position to brain screen
@@ -212,8 +213,8 @@ void initialize() {
         while (true) {
             // print robot location to the brain screen
             //pros::lcd::print(0, "Dist: %i", colorSense.get_proximity());
-            pros::lcd::print(0, "vel: %f", mainIntake.get_actual_velocity()); // x
-            pros::lcd::print(1, "vel1: %f", counterRoller.get_actual_velocity()); // x
+            pros::lcd::print(0, "X Pos: %f", chassis.getPose().x); // x
+            pros::lcd::print(1, "Y Pos: %f", chassis.getPose().y); // x
             /*pros::lcd::print(0, "X: %f", chassis.getPose().x); // x
             pros::lcd::print(1, "Y: %f", chassis.getPose().y); // y*/
             pros::lcd::print(2, "Theta: %f", chassis.getPose().theta); // heading
@@ -303,12 +304,13 @@ void initialize() {
     6 - Right 4+3 wing
     7 - Left 4+3 wing
 */
-int chosenAuton = 7;
+int chosenAuton = 0;
 
 void autonomous() {
     switch(chosenAuton){
         case 0:
             // lateral pid test
+            update = false;
             chassis.setPose(0,0,0);
 
             chassis.moveToPoint(0,24,10000);
@@ -409,7 +411,7 @@ void autonomous() {
             wing.set_value(true);
 
             // descore matchload tube and score in long goal
-            chassis.moveToPoint(144-25, chassis.getPose().y, 1000, {.maxSpeed = 80});
+            chassis.moveToPoint(144-26, chassis.getPose().y, 1200, {.maxSpeed = 80});
             chassis.waitUntilDone();
             update = false;
             chassis.turnToHeading(180, 500);
@@ -443,7 +445,8 @@ void autonomous() {
             update = true;
             pros::delay(50);
             update = false;
-            chassis.moveToPoint(144-12, 144-32, 2500, {.forwards = false, .maxSpeed = 80});
+            pros::delay(50);
+            chassis.moveToPoint(144-15, 144-32, 2500, {.forwards = false, .maxSpeed = 80});
             chassis.waitUntilDone();
             quadrant = 2;
             update = true;
@@ -496,7 +499,7 @@ void autonomous() {
             chassis.waitUntilDone();
             hood.set_value(false);
             hoodUp = false;
-            chassis.turnToHeading(225, 500);
+            chassis.turnToHeading(225, 750);
             chassis.waitUntilDone();
             chassis.moveToPoint(144-50, 144-45, 1200, {.maxSpeed = 80});
             pros::delay(600);
@@ -510,10 +513,10 @@ void autonomous() {
             pros::delay(600);
             tongue.set_value(true);
             chassis.waitUntilDone();
-            chassis.turnToHeading(135, 750);
+            chassis.turnToHeading(150, 750); // 135
             chassis.waitUntilDone();
             tongue.set_value(false);
-            chassis.moveToPoint(144-88, 144-53, 1000, {.maxSpeed = 80});
+            chassis.moveToPoint(144-94, 144-54, 1200, {.maxSpeed = 80});
             chassis.waitUntilDone();
             chassis.turnToHeading(135, 750);
             chassis.waitUntilDone(); // delete for time save
@@ -523,7 +526,7 @@ void autonomous() {
             pros::delay(1500);
 
             // descore matchload tube in third quadrant
-            chassis.moveToPoint(25, 144-20, 2000, {.forwards = false, .maxSpeed = 80});
+            chassis.moveToPoint(20, 144-20, 2000, {.forwards = false, .maxSpeed = 80});
             pros::delay(300);
             firstStage.set_value(false);
             tongue.set_value(true);
@@ -536,7 +539,7 @@ void autonomous() {
             pros::delay(50);
             update = true;
             pros::delay(50);
-            chassis.moveToPoint(25, 144-11, 750, {.maxSpeed = 80});
+            chassis.moveToPoint(24, 144-11, 750, {.maxSpeed = 80});
             chassis.waitUntilDone();
             leftMotors.move(80);
             rightMotors.move(80);
@@ -546,43 +549,42 @@ void autonomous() {
             pros::delay(50);
 
             // move to fourth quadrant and score in long goal
-            chassis.moveToPoint(25, 144-20, 750, {.forwards = false});
+            chassis.moveToPoint(24, 144-20, 750, {.forwards = false});
             chassis.waitUntilDone();
             update = false;
             tongue.set_value(false);
-            chassis.turnToHeading(270, 500);
+            chassis.turnToHeading(270, 750);
             chassis.waitUntilDone();
             update = true;
             pros::delay(50);
+            chassis.moveToPoint(chassis.getPose().x - 12, 144-20, 1000); // 750 timeout
+            chassis.waitUntilDone();
+            chassis.turnToHeading(0, 750);
+            chassis.waitUntilDone();
             update = false;
             pros::delay(50);
-            chassis.moveToPoint(12, 144-20, 750);
-            chassis.waitUntilDone();
-            chassis.turnToHeading(10, 750);
-            chassis.waitUntilDone();
-            chassis.moveToPoint(3, 34, 2500, {.forwards = false, .maxSpeed = 80});
+            chassis.moveToPoint(6, 34, 2500, {.forwards = false, .maxSpeed = 80});
             chassis.waitUntilDone();
             quadrant = 4;
-            update = true;
 
             chassis.turnToHeading(270, 500);
             chassis.waitUntilDone();
-            chassis.moveToPoint(40, 38, 750, {.forwards = false});
+            update = true;
+            pros::delay(200);
+            chassis.moveToPoint(26, 34, 750, {.forwards = false});
             chassis.waitUntilDone();
             chassis.turnToHeading(180, 750);
             chassis.waitUntilDone();
-            // chassis.moveToPoint(26, 50, 750, {.forwards = false});
-            // chassis.waitUntilDone();
-            // hood.set_value(true);
-            // hoodUp = true;
-            // tongue.set_value(true);
-            // leftMotors.move(-80);
-            // rightMotors.move(-80);
-            // pros::delay(1500);
-            // leftMotors.move(0);
-            // rightMotors.move(0);
-
-            /*
+            chassis.moveToPoint(26, 50, 750, {.forwards = false});
+            chassis.waitUntilDone();
+            hood.set_value(true);
+            hoodUp = true;
+            tongue.set_value(true);
+            leftMotors.move(-80);
+            rightMotors.move(-80);
+            pros::delay(1500);
+            leftMotors.move(0);
+            rightMotors.move(0);
             
             update = true;
             pros::delay(50);
@@ -609,7 +611,6 @@ void autonomous() {
             leftMotors.move(0);
             rightMotors.move(0);
             pros::delay(50);
-            */
 
             break;
         case 4:
