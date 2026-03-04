@@ -48,7 +48,7 @@ lemlib::Drivetrain drivetrain(&leftMotors, // left motor group
                               0 // horizontal drift is 2 (for now)
 );
 // create an imu on port 3
-pros::Imu imu1(11);
+pros::Imu imu1(-11);
 // create a v5 rotation sensor on port 1
 pros::Rotation vertical_encoder(7);
 // horizontal tracking wheel
@@ -198,7 +198,7 @@ double safeDistanceInchesY(pros::Distance& sensor) {
     return sensor.get_distance() / 25.4;
 }
 
-bool update = true;
+bool update = false;
 int quadrant = 1;
 
 time_t lastChange = time_t();
