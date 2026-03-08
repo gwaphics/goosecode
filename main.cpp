@@ -48,7 +48,7 @@ lemlib::Drivetrain drivetrain(&leftMotors, // left motor group
                               0 // horizontal drift is 2 (for now)
 );
 // create an imu on port 3
-pros::Imu imu1(11);
+pros::Imu imu1(19);
 // create a v5 rotation sensor on port 1
 pros::Rotation vertical_encoder(7);
 // horizontal tracking wheel
@@ -98,6 +98,7 @@ bool midGoalRed = false;
 bool midGoalBlue = false;
 bool midGoalAll = false;
 bool lowGoal = false;
+bool autoMidGoal = false;
 std::string color = "none";
 bool hoodUp = false;
 
@@ -173,7 +174,12 @@ void midScore(std::string clr) {
     }
 }
 void midScore() {
-    mainIntake.move(100);
+    mainIntake.move(127);
+    counterRoller.move(-127);
+}
+
+void autoMidScore() {
+    mainIntake.move(127);
     counterRoller.move(-127);
 }
 
@@ -200,6 +206,7 @@ double safeDistanceInchesY(pros::Distance& sensor) {
 
 bool update = true;
 int quadrant = 1;
+int tolerance = 5;
 
 time_t lastChange = time_t();
 void initialize() {
@@ -238,6 +245,8 @@ void initialize() {
                 midScore("blue");
             } else if (midGoalAll) {
                 midScore();
+            } else if (autoMidGoal) {
+                autoMidScore();
             } else if (lowGoal) {
                 lowScore();
             } else {
@@ -247,43 +256,43 @@ void initialize() {
 
             if (update) {
                 if (quadrant == 1) {
-                    if (chassis.getPose().theta >= 358 || chassis.getPose().theta <= 2) {
+                    if (chassis.getPose().theta >= 360-tolerance || chassis.getPose().theta <= 0+tolerance) {
                         chassis.setPose(144 - safeDistanceInchesX(rightDS) - 4.5, chassis.getPose().y, chassis.getPose().theta);
-                    } else if (chassis.getPose().theta >= 88 && chassis.getPose().theta <= 92) {
+                    } else if (chassis.getPose().theta >= 90-tolerance && chassis.getPose().theta <= 90+tolerance) {
                         chassis.setPose(144 - safeDistanceInchesX(frontDS) - 2, safeDistanceInchesY(rightDS) + 4.5, chassis.getPose().theta);
-                    } else if (chassis.getPose().theta >= 178 && chassis.getPose().theta <= 182) {
+                    } else if (chassis.getPose().theta >= 180-tolerance && chassis.getPose().theta <= 180+tolerance) {
                         chassis.setPose(144 - safeDistanceInchesX(leftDS) - 4.5, safeDistanceInchesY(frontDS) + 2, chassis.getPose().theta);
-                    } else if (chassis.getPose().theta >= 268 && chassis.getPose().theta <= 272) {
+                    } else if (chassis.getPose().theta >= 270-tolerance && chassis.getPose().theta <= 270+tolerance) {
                         chassis.setPose(chassis.getPose().x, safeDistanceInchesY(leftDS) + 4.5, chassis.getPose().theta);
                     }
                 } else if (quadrant == 2) {
-                    if (chassis.getPose().theta >= 358 || chassis.getPose().theta <= 2) {
+                    if (chassis.getPose().theta >= 360-tolerance || chassis.getPose().theta <= 0+tolerance) {
                         chassis.setPose(144 - safeDistanceInchesX(rightDS) - 4.5, 144 - safeDistanceInchesY(frontDS) - 2, chassis.getPose().theta);
-                    } else if (chassis.getPose().theta >= 88 && chassis.getPose().theta <= 92) {
+                    } else if (chassis.getPose().theta >= 90-tolerance && chassis.getPose().theta <= 90+tolerance) {
                         chassis.setPose(144 - safeDistanceInchesX(frontDS) - 2, 144 - safeDistanceInchesY(leftDS) - 4.5, chassis.getPose().theta);
-                    } else if (chassis.getPose().theta >= 178 && chassis.getPose().theta <= 182) {
+                    } else if (chassis.getPose().theta >= 180-tolerance && chassis.getPose().theta <= 180+tolerance) {
                         chassis.setPose(144 - safeDistanceInchesX(leftDS) - 4.5, chassis.getPose().y, chassis.getPose().theta);
-                    } else if (chassis.getPose().theta >= 268 && chassis.getPose().theta <= 272) {
+                    } else if (chassis.getPose().theta >= 270-tolerance && chassis.getPose().theta <= 270+tolerance) {
                         chassis.setPose(chassis.getPose().x, 144 - safeDistanceInchesY(rightDS) - 4.5, chassis.getPose().theta);
                     }
                 } else if (quadrant == 3) {
-                    if (chassis.getPose().theta >= 358 || chassis.getPose().theta <= 2) {
+                    if (chassis.getPose().theta >= 360-tolerance || chassis.getPose().theta <= 0+tolerance) {
                         chassis.setPose(safeDistanceInchesX(leftDS) + 4.5, 144 - safeDistanceInchesY(frontDS) - 2, chassis.getPose().theta);
-                    } else if (chassis.getPose().theta >= 88 && chassis.getPose().theta <= 92) {
+                    } else if (chassis.getPose().theta >= 90-tolerance && chassis.getPose().theta <= 90+tolerance) {
                         chassis.setPose(chassis.getPose().x, 144 - safeDistanceInchesY(leftDS) - 4.5, chassis.getPose().theta);
-                    } else if (chassis.getPose().theta >= 178 && chassis.getPose().theta <= 182) {
+                    } else if (chassis.getPose().theta >= 180-tolerance && chassis.getPose().theta <= 180+tolerance) {
                         chassis.setPose(safeDistanceInchesX(rightDS) + 4.5, chassis.getPose().y, chassis.getPose().theta);
-                    } else if (chassis.getPose().theta >= 268 && chassis.getPose().theta <= 272) {
+                    } else if (chassis.getPose().theta >= 270-tolerance && chassis.getPose().theta <= 270+tolerance) {
                         chassis.setPose(safeDistanceInchesX(frontDS) + 2, 144 - safeDistanceInchesY(rightDS) - 4.5, chassis.getPose().theta);
                     }
                 } else if (quadrant == 4) {
-                    if (chassis.getPose().theta >= 358 || chassis.getPose().theta <= 2) {
+                    if (chassis.getPose().theta >= 360-tolerance || chassis.getPose().theta <= 0+tolerance) {
                         chassis.setPose(safeDistanceInchesX(leftDS) + 4.5, chassis.getPose().y, chassis.getPose().theta);
-                    } else if (chassis.getPose().theta >= 88 && chassis.getPose().theta <= 92) {
+                    } else if (chassis.getPose().theta >= 90-tolerance && chassis.getPose().theta <= 90+tolerance) {
                         chassis.setPose(chassis.getPose().x, safeDistanceInchesY(rightDS) + 4.5, chassis.getPose().theta);
-                    } else if (chassis.getPose().theta >= 178 && chassis.getPose().theta <= 182) {
+                    } else if (chassis.getPose().theta >= 180-tolerance && chassis.getPose().theta <= 180+tolerance) {
                         chassis.setPose(safeDistanceInchesX(rightDS) + 4.5, safeDistanceInchesY(frontDS) + 2, chassis.getPose().theta);
-                    } else if (chassis.getPose().theta >= 268 && chassis.getPose().theta <= 272) {
+                    } else if (chassis.getPose().theta >= 270-tolerance && chassis.getPose().theta <= 270+tolerance) {
                         chassis.setPose(safeDistanceInchesX(frontDS) + 2, safeDistanceInchesY(leftDS) + 4.5, chassis.getPose().theta);
                     }
                 }
@@ -1046,13 +1055,13 @@ void autonomous() {
             wing.set_value(true);
 
             // get near right 4 balls and score in long goal
-            chassis.moveToPoint(144-48, chassis.getPose().y, 750, {.maxSpeed = 80});
+            chassis.moveToPoint(144-46, chassis.getPose().y, 750, {.maxSpeed = 60});
             chassis.waitUntilDone();
             update = false;
             chassis.turnToHeading(0, 750);
             chassis.waitUntilDone();
             intakeAll = true;
-            chassis.moveToPoint(144-48, 50, 1500, {.maxSpeed = 60});
+            chassis.moveToPoint(144-46, 50, 1500, {.maxSpeed = 60});
             pros::delay(600);
             tongue.set_value(true);
             chassis.waitUntilDone();
@@ -1069,7 +1078,7 @@ void autonomous() {
             hoodUp = true;
             leftMotors.move(-80);
             rightMotors.move(-80);
-            pros::delay(600);
+            pros::delay(1500);
             leftMotors.move(0);
             rightMotors.move(0);
 
@@ -1080,7 +1089,7 @@ void autonomous() {
             hoodUp = false;
             leftMotors.move(80);
             rightMotors.move(80);
-            pros::delay(1500);
+            pros::delay(2000);
             leftMotors.move(0);
             rightMotors.move(0);
             chassis.moveToPoint(144-26, 18, 750, {.forwards = false});
@@ -1093,7 +1102,7 @@ void autonomous() {
             chassis.waitUntilDone();
             
             // move to second quadrant and score in long goal
-            chassis.moveToPoint(144-11, 144-37, 2500, {.forwards = false, .maxSpeed = 80});
+            chassis.moveToPoint(144-11, 144-35, 2500, {.forwards = false, .maxSpeed = 80});
             pros::delay(1000);
             quadrant = 2;
             tongue.set_value(false);
@@ -1108,13 +1117,13 @@ void autonomous() {
             hoodUp = true;
             leftMotors.move(-80);
             rightMotors.move(-80);
-            pros::delay(600);
+            pros::delay(1500);
             leftMotors.move(0);
             rightMotors.move(0);
 
             // descore far right matchload tube and score in long goal
             tongue.set_value(true);
-            chassis.moveToPoint(144-24, 144-12, 1000, {.maxSpeed = 60});
+            chassis.moveToPoint(144-23, 144-12, 1000, {.maxSpeed = 60});
             chassis.waitUntilDone();
             hood.set_value(false);
             hoodUp = false;
@@ -1123,15 +1132,114 @@ void autonomous() {
             pros::delay(1500);
             leftMotors.move(0);
             rightMotors.move(0);
-            chassis.moveToPoint(144-23, 144-45, 1000, {.forwards = false, .maxSpeed = 80});
+            chassis.moveToPoint(144-24, 144-45, 1000, {.forwards = false, .maxSpeed = 80});
             chassis.waitUntilDone();
             hood.set_value(true);
             hoodUp = true;
             leftMotors.move(-80);
             rightMotors.move(-80);
-            pros::delay(600);
+            pros::delay(1500);
             leftMotors.move(0);
             rightMotors.move(0);
+
+            // get far right 4 balls and score in mid goal
+            chassis.moveToPoint(144-24, 144-25, 1000);
+            tongue.set_value(false);
+            chassis.waitUntilDone();
+            update = false;
+            pros::delay(100);
+            hood.set_value(false);
+            hoodUp = false;
+            chassis.turnToHeading(-130, 750);
+            chassis.waitUntilDone();
+            chassis.moveToPoint(144-50, 144-48, 1500, {.maxSpeed = 60});
+            pros::delay(750);
+            tongue.set_value(true);
+            chassis.waitUntilDone();
+            chassis.turnToHeading(45, 1000);
+            chassis.waitUntilDone();
+            chassis.moveToPoint(144-65, 144-62, 1000, {.forwards = false, .maxSpeed = 80});
+            chassis.waitUntilDone();
+            intakeAll = false;
+            lowGoal = true;
+            pros::delay(300);
+            lowGoal = false;
+            autoMidGoal = true;
+            pros::delay(2000);
+            autoMidGoal = false;
+            intakeAll = true;
+
+            // get far left 4 balls and score in long goal
+            chassis.moveToPoint(144-50, 144-45, 1000, {.maxSpeed = 80});
+            chassis.waitUntilDone();
+            tongue.set_value(false);
+            chassis.turnToHeading(-88, 1000, {.maxSpeed = 80});
+            chassis.waitUntilDone();
+            chassis.moveToPoint(43, 144-45, 2500, {.maxSpeed = 80});
+            pros::delay(1000);
+            tongue.set_value(true);
+            quadrant = 3;
+            chassis.waitUntilDone();
+            chassis.turnToHeading(-40, 750);
+            chassis.waitUntilDone();
+            chassis.moveToPoint(20, 144-25, 1000, {.maxSpeed = 80});
+            chassis.waitUntilDone();
+            chassis.turnToHeading(0, 750);
+            chassis.waitUntilDone();
+            update = true;
+            pros::delay(100);
+            chassis.moveToPoint(24, 144-45, 1000, {.forwards = false, .maxSpeed = 80});
+            chassis.waitUntilDone();
+            hood.set_value(true);
+            hoodUp = true;
+            leftMotors.move(-80);
+            rightMotors.move(-80);
+            pros::delay(1500);
+            leftMotors.move(0);
+            rightMotors.move(0);
+
+            // descore far left matchload tube
+            chassis.moveToPoint(24, 144-12, 1000, {.maxSpeed = 60});
+            chassis.waitUntilDone();
+            hood.set_value(false);
+            hoodUp = false;
+            leftMotors.move(80);
+            rightMotors.move(80);
+            pros::delay(2000);
+            leftMotors.move(0);
+            rightMotors.move(0);
+
+            // move to fourth quadrant and score in long goal
+            chassis.moveToPoint(24, 144-18, 750, {.forwards = false});
+            chassis.waitUntilDone();
+            chassis.turnToHeading(45, 500);
+            chassis.waitUntilDone();
+            chassis.moveToPoint(10, 144-33, 750, {.forwards = false});
+            chassis.waitUntilDone();
+            chassis.turnToHeading(0, 500);
+            chassis.waitUntilDone();
+            update = false;
+            pros::delay(100);
+            chassis.moveToPoint(10, 40, 2500, {.forwards = false, .maxSpeed = 80});
+            pros::delay(1000);
+            quadrant = 4;
+            chassis.waitUntilDone();
+            update = true;
+            pros::delay(100);
+            chassis.moveToPoint(25, 20, 1000, {.forwards = false, .maxSpeed = 80});
+            chassis.waitUntilDone();
+            chassis.turnToHeading(180, 750);
+            chassis.waitUntilDone();
+            chassis.moveToPoint(25, 45, 1000, {.forwards = false, .maxSpeed = 80});
+            chassis.waitUntilDone();
+            hood.set_value(true);
+            hoodUp = true;
+            leftMotors.move(-80);
+            rightMotors.move(-80);
+            pros::delay(1500);
+            leftMotors.move(0);
+            rightMotors.move(0);
+
 
             break;
     }
