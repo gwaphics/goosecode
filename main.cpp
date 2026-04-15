@@ -33,9 +33,11 @@ pros::Distance leftDS(21);
 pros::Optical colorSense(19);
 // pnaumatics
 pros::adi::DigitalOut tongue('C');
-pros::adi::DigitalOut wing('A');
+pros::adi::DigitalOut frontWing('A');
+pros::adi::DigitalOut backWing('H');
 pros::adi::DigitalOut hood('F');
 pros::adi::DigitalOut firstStage('D');
+pros::adi::DigitalOut midGoalDescore('G');
 
 
 bool stopSkills = false;
@@ -180,11 +182,11 @@ void midScore() {
 
 void autoMidScore() {
     mainIntake.move(60);
-    counterRoller.move(-127);
+    counterRoller.move(-115);
 }
 
 void lowScore() {
-    mainIntake.move(-67);
+    mainIntake.move(-127);
     counterRoller.move(-127);
 }
 
@@ -208,6 +210,13 @@ bool update = true;
 int quadrant = 1;
 int tolerance = 5;
 
+double theta() {
+    if (chassis.getPose().theta < -tolerance) {
+        return chassis.getPose().theta + 360;
+    }
+    return chassis.getPose().theta;
+}
+
 time_t lastChange = time_t();
 void initialize() {
     pros::lcd::initialize(); // initialize brain screen
@@ -227,7 +236,7 @@ void initialize() {
             pros::lcd::print(2, "Theta: %f", chassis.getPose().theta); // heading
             //string toPrint = "(" + to_string((int)chassis.getPose().x) + "," + to_string((int)chassis.getPose().y) + "," + to_string((int)chassis.getPose().theta) + ")";
 
-            string toPrint = to_string(chassis.getPose().x) + " " + to_string(chassis.getPose().y) + "          ";
+            string toPrint = to_string(round(chassis.getPose().theta));
             controller.set_text(0,0,toPrint);
 
             // delay to save resources
@@ -256,43 +265,43 @@ void initialize() {
 
             if (update) {
                 if (quadrant == 1) {
-                    if (chassis.getPose().theta >= 360-tolerance || chassis.getPose().theta <= 0+tolerance) {
+                    if (theta() >= 360-tolerance || theta() <= 0+tolerance) {
                         chassis.setPose(144 - safeDistanceInchesX(rightDS) - 4.5, chassis.getPose().y, chassis.getPose().theta);
-                    } else if (chassis.getPose().theta >= 90-tolerance && chassis.getPose().theta <= 90+tolerance) {
+                    } else if (theta() >= 90-tolerance && theta() <= 90+tolerance) {
                         chassis.setPose(144 - safeDistanceInchesX(frontDS) - 2, safeDistanceInchesY(rightDS) + 4.5, chassis.getPose().theta);
-                    } else if (chassis.getPose().theta >= 180-tolerance && chassis.getPose().theta <= 180+tolerance) {
+                    } else if (theta() >= 180-tolerance && theta() <= 180+tolerance) {
                         chassis.setPose(144 - safeDistanceInchesX(leftDS) - 4.5, safeDistanceInchesY(frontDS) + 2, chassis.getPose().theta);
-                    } else if (chassis.getPose().theta >= 270-tolerance && chassis.getPose().theta <= 270+tolerance) {
+                    } else if (theta() >= 270-tolerance && theta() <= 270+tolerance) {
                         chassis.setPose(chassis.getPose().x, safeDistanceInchesY(leftDS) + 4.5, chassis.getPose().theta);
                     }
                 } else if (quadrant == 2) {
-                    if (chassis.getPose().theta >= 360-tolerance || chassis.getPose().theta <= 0+tolerance) {
+                    if (theta() >= 360-tolerance || theta() <= 0+tolerance) {
                         chassis.setPose(144 - safeDistanceInchesX(rightDS) - 4.5, 144 - safeDistanceInchesY(frontDS) - 2, chassis.getPose().theta);
-                    } else if (chassis.getPose().theta >= 90-tolerance && chassis.getPose().theta <= 90+tolerance) {
+                    } else if (theta() >= 90-tolerance && theta() <= 90+tolerance) {
                         chassis.setPose(144 - safeDistanceInchesX(frontDS) - 2, 144 - safeDistanceInchesY(leftDS) - 4.5, chassis.getPose().theta);
-                    } else if (chassis.getPose().theta >= 180-tolerance && chassis.getPose().theta <= 180+tolerance) {
+                    } else if (theta() >= 180-tolerance && theta() <= 180+tolerance) {
                         chassis.setPose(144 - safeDistanceInchesX(leftDS) - 4.5, chassis.getPose().y, chassis.getPose().theta);
-                    } else if (chassis.getPose().theta >= 270-tolerance && chassis.getPose().theta <= 270+tolerance) {
+                    } else if (theta() >= 270-tolerance && theta() <= 270+tolerance) {
                         chassis.setPose(chassis.getPose().x, 144 - safeDistanceInchesY(rightDS) - 4.5, chassis.getPose().theta);
                     }
                 } else if (quadrant == 3) {
-                    if (chassis.getPose().theta >= 360-tolerance || chassis.getPose().theta <= 0+tolerance) {
+                    if (theta() >= 360-tolerance || theta() <= 0+tolerance) {
                         chassis.setPose(safeDistanceInchesX(leftDS) + 4.5, 144 - safeDistanceInchesY(frontDS) - 2, chassis.getPose().theta);
-                    } else if (chassis.getPose().theta >= 90-tolerance && chassis.getPose().theta <= 90+tolerance) {
+                    } else if (theta() >= 90-tolerance && theta() <= 90+tolerance) {
                         chassis.setPose(chassis.getPose().x, 144 - safeDistanceInchesY(leftDS) - 4.5, chassis.getPose().theta);
-                    } else if (chassis.getPose().theta >= 180-tolerance && chassis.getPose().theta <= 180+tolerance) {
+                    } else if (theta() >= 180-tolerance && theta() <= 180+tolerance) {
                         chassis.setPose(safeDistanceInchesX(rightDS) + 4.5, chassis.getPose().y, chassis.getPose().theta);
-                    } else if (chassis.getPose().theta >= 270-tolerance && chassis.getPose().theta <= 270+tolerance) {
+                    } else if (theta() >= 270-tolerance && theta() <= 270+tolerance) {
                         chassis.setPose(safeDistanceInchesX(frontDS) + 2, 144 - safeDistanceInchesY(rightDS) - 4.5, chassis.getPose().theta);
                     }
                 } else if (quadrant == 4) {
-                    if (chassis.getPose().theta >= 360-tolerance || chassis.getPose().theta <= 0+tolerance) {
+                    if (theta() >= 360-tolerance || theta() <= 0+tolerance) {
                         chassis.setPose(safeDistanceInchesX(leftDS) + 4.5, chassis.getPose().y, chassis.getPose().theta);
-                    } else if (chassis.getPose().theta >= 90-tolerance && chassis.getPose().theta <= 90+tolerance) {
+                    } else if (theta() >= 90-tolerance && theta() <= 90+tolerance) {
                         chassis.setPose(chassis.getPose().x, safeDistanceInchesY(rightDS) + 4.5, chassis.getPose().theta);
-                    } else if (chassis.getPose().theta >= 180-tolerance && chassis.getPose().theta <= 180+tolerance) {
+                    } else if (theta() >= 180-tolerance && theta() <= 180+tolerance) {
                         chassis.setPose(safeDistanceInchesX(rightDS) + 4.5, safeDistanceInchesY(frontDS) + 2, chassis.getPose().theta);
-                    } else if (chassis.getPose().theta >= 270-tolerance && chassis.getPose().theta <= 270+tolerance) {
+                    } else if (theta() >= 270-tolerance && theta() <= 270+tolerance) {
                         chassis.setPose(safeDistanceInchesX(frontDS) + 2, safeDistanceInchesY(leftDS) + 4.5, chassis.getPose().theta);
                     }
                 }
@@ -307,14 +316,15 @@ void initialize() {
     0 - Lateral PID test
     1 - Angular PID test
     2 - SAWP
-    3 - Skills
-    4 - Lonely Skills
-    5 - 9 Ball Elims
-    6 - Right 4+3 wing
-    7 - Left 4+3 wing
+    3 - Counter SAWP
+    4 - Right 7 ball wing push
+    5 - Left 7 ball wing push
+    6 - Right 3+4 ball wing push
+    7 - Left 3+4 ball wing push
     8 - States Skills
+    9 - Elims w 40kE
 */
-int chosenAuton = 8;
+int chosenAuton = 4;
 
 void autonomous() {
     switch(chosenAuton){
@@ -337,7 +347,7 @@ void autonomous() {
             chassis.setPose(144-frontDS.get_distance()/25.4 - 2,rightDS.get_distance()/25.4 + 4.5, 90);
 
             // descore matchload tube and score in long goal
-            chassis.moveToPoint(144-26, chassis.getPose().y, 1000, {.maxSpeed = 80});
+            chassis.moveToPoint(144-25, chassis.getPose().y, 1000, {.maxSpeed = 80});
             chassis.waitUntilDone();
             update = false;
             chassis.turnToHeading(180, 500);
@@ -345,68 +355,69 @@ void autonomous() {
             chassis.waitUntilDone();
             intakeAll = true;
             update = true;
-            chassis.moveToPoint(144-26, 11, 800);
+            chassis.moveToPoint(144-25, 11, 850);
             chassis.waitUntilDone();
             // add move forward
-            pros::delay(100);
-            chassis.moveToPoint(144-24, 42, 1000, {.forwards = false, .maxSpeed = 80});
+            // pros::delay(100);
+            chassis.moveToPoint(144-24, 45, 900, {.forwards = false, .maxSpeed = 80});
             chassis.waitUntilDone();
             hood.set_value(true);
             hoodUp = true;
             chassis.turnToHeading(180, 500);
             leftMotors.move(-80);
             rightMotors.move(-80);
-            pros::delay(300);
+            pros::delay(500);
             leftMotors.move(0);
             rightMotors.move(0);
             tongue.set_value(false);
 
             // get center balls and score in mid goal
-            chassis.moveToPoint(144-24, 30, 750);
+            chassis.moveToPoint(144-25, 27, 750, {.maxSpeed = 80});
             chassis.waitUntilDone();
             update = false;
-            chassis.turnToHeading(-45, 500);
+            chassis.turnToHeading(-45, 750);
             hood.set_value(false);
             hoodUp = false;
             chassis.waitUntilDone();
-            chassis.moveToPoint(144-47, 46, 1000);
+            chassis.moveToPoint(144-52, 49, 1000);
             pros::delay(650);
             tongue.set_value(true);
             chassis.waitUntilDone();
             chassis.turnToHeading(270, 500);
             chassis.waitUntilDone();
-            chassis.moveToPoint(144-100, 47, 1000);
+            chassis.moveToPoint(144-95, 51, 1000); // 97
             pros::delay(300);
             tongue.set_value(false);
-            pros::delay(600);
+            pros::delay(500);
             tongue.set_value(true);
             chassis.waitUntilDone();
-            chassis.turnToHeading(225, 500);
+
+            chassis.turnToHeading(225, 500); // 217
             chassis.waitUntilDone();
-            chassis.moveToPoint(144-85, 60, 750, {.forwards = false, .maxSpeed = 80});
+            chassis.moveToPoint(59, 63, 750, {.forwards = false, .maxSpeed = 80});
             chassis.waitUntilDone();
             intakeAll = false;
             lowGoal = true;
             pros::delay(200);
             lowGoal = false;
-            midGoalAll = true;
+            autoMidGoal = true;
             pros::delay(700);
-            midGoalAll = false;
+            autoMidGoal = false;
             intakeAll = true;
 
             // descore other matchload tube and score in long goal
-            chassis.moveToPoint(25, 15, 1300, {.maxSpeed = 80});
+            chassis.moveToPoint(22, 25, 1300, {.maxSpeed = 80});
             chassis.waitUntilDone();
             chassis.turnToHeading(180, 500);
             tongue.set_value(true);
             chassis.waitUntilDone();
             quadrant = 4;
             update = true;
-            chassis.moveToPoint(25, 7, 1000, {.maxSpeed = 80});
+            chassis.moveToPoint(24, 7, 1000, {.maxSpeed = 60});
             chassis.waitUntilDone();
             // add move forward
-            pros::delay(100);
-            chassis.moveToPoint(21, 44, 1000, {.forwards = false, .maxSpeed = 80});
+            // pros::delay(100);
+            chassis.moveToPoint(22, 45, 750, {.forwards = false, .maxSpeed = 80});
             chassis.waitUntilDone();
             leftMotors.move(-80);
             rightMotors.move(-80);
@@ -415,13 +426,12 @@ void autonomous() {
 
             break;
         case 3:
-            // Skills
+            // Counter SAWP
             quadrant = 1;
             chassis.setPose(144-frontDS.get_distance()/25.4 - 2,rightDS.get_distance()/25.4 + 4.5, 90);
-            wing.set_value(true);
 
             // descore matchload tube and score in long goal
-            chassis.moveToPoint(144-26, chassis.getPose().y, 1200, {.maxSpeed = 80});
+            chassis.moveToPoint(144-25, chassis.getPose().y, 1000, {.maxSpeed = 80});
             chassis.waitUntilDone();
             update = false;
             chassis.turnToHeading(180, 500);
@@ -429,623 +439,311 @@ void autonomous() {
             chassis.waitUntilDone();
             intakeAll = true;
             update = true;
-            chassis.moveToPoint(144-25, 11, 1000);
+            chassis.moveToPoint(144-25, 11, 750);
             chassis.waitUntilDone();
-            leftMotors.move(80);
-            rightMotors.move(80);
-            pros::delay(1500);
-            leftMotors.move(0);
-            rightMotors.move(0);
-            pros::delay(50);
-
-            // move to second quadrant and score in long goal
-            chassis.moveToPoint(144-25, 20, 750, {.forwards = false});
-            chassis.waitUntilDone();
-            update = false;
-            tongue.set_value(false);
-            chassis.turnToHeading(90, 500);
-            chassis.waitUntilDone();
-            update = true;
-            pros::delay(50);
-            chassis.moveToPoint(144-12, 20, 750);
-            chassis.waitUntilDone();
-            update = false;
-            chassis.turnToHeading(180, 500);
-            chassis.waitUntilDone();
-            update = true;
-            pros::delay(50);
-            update = false;
-            pros::delay(50);
-            chassis.moveToPoint(144-15, 144-32, 2500, {.forwards = false, .maxSpeed = 80});
-            chassis.waitUntilDone();
-            quadrant = 2;
-            update = true;
-            chassis.turnToHeading(90, 500);
-            chassis.waitUntilDone();
-            chassis.moveToPoint(144-22, 144-32, 750, {.forwards = false});
-            chassis.waitUntilDone();
-            chassis.turnToHeading(0, 500);
-            chassis.waitUntilDone();
-            chassis.moveToPoint(144-22, 144-43, 750, {.forwards = false});
+            // add move forward
+            pros::delay(100);
+            chassis.moveToPoint(144-24, 45, 750, {.forwards = false});
             chassis.waitUntilDone();
             hood.set_value(true);
             hoodUp = true;
-            tongue.set_value(true);
             leftMotors.move(-80);
             rightMotors.move(-80);
-            pros::delay(1500);
-            leftMotors.move(0);
-            rightMotors.move(0);
-            pros::delay(50);
-
-            // descore second matchload tube and score in long goal
-            chassis.moveToPoint(144-23, 144-20, 750);
-            hood.set_value(false);
-            hoodUp = false;
-            chassis.moveToPoint(144-23, 144-11, 750, {.maxSpeed = 80});
-            chassis.waitUntilDone();
-            leftMotors.move(80);
-            rightMotors.move(80);
-            pros::delay(1500);
-            leftMotors.move(0);
-            rightMotors.move(0);
-            chassis.moveToPoint(144-23, 144-43, 1000, {.forwards = false, .maxSpeed = 80});
-            chassis.waitUntilDone();
-            hood.set_value(true);
-            hoodUp = true;
-            tongue.set_value(false);
-            leftMotors.move(-80);
-            rightMotors.move(-80);
-            pros::delay(1500);
-            leftMotors.move(0);
-            rightMotors.move(0);
-
-            // get mid balls and score in low goal
-            update = false;
-            pros::delay(50);
-            chassis.setPose(144 - rightDS.get_distance()/25.4 - 4.5, 144 - frontDS.get_distance()/25.4 - 2 ,chassis.getPose().theta);
-            pros::delay(50);
-            chassis.moveToPoint(144 - rightDS.get_distance()/25.4 - 4.5, 144-30, 750);
-            chassis.waitUntilDone();
-            hood.set_value(false);
-            hoodUp = false;
-            chassis.turnToHeading(225, 750);
-            chassis.waitUntilDone();
-            chassis.moveToPoint(144-50, 144-45, 1200, {.maxSpeed = 80});
-            pros::delay(600);
-            tongue.set_value(true);
-            chassis.waitUntilDone();
-            chassis.turnToHeading(270, 500);
-            chassis.waitUntilDone();
-            chassis.moveToPoint(144-97, 144-45, 1500, {.maxSpeed = 80});
-            pros::delay(300);
-            tongue.set_value(false);
-            pros::delay(600);
-            tongue.set_value(true);
-            chassis.waitUntilDone();
-            chassis.turnToHeading(150, 750); // 135
-            chassis.waitUntilDone();
-            tongue.set_value(false);
-            chassis.moveToPoint(144-94, 144-54, 1200, {.maxSpeed = 80});
-            chassis.waitUntilDone();
-            chassis.turnToHeading(135, 750);
-            chassis.waitUntilDone(); // delete for time save
-            firstStage.set_value(true);
-            intakeAll = false;
-            lowGoal = true;
-            pros::delay(1500);
-
-            // descore matchload tube in third quadrant
-            chassis.moveToPoint(20, 144-20, 2000, {.forwards = false, .maxSpeed = 80});
-            pros::delay(300);
-            firstStage.set_value(false);
-            tongue.set_value(true);
-            lowGoal = false;
-            intakeAll = true;
-            chassis.waitUntilDone();
-            chassis.turnToHeading(0, 750);
-            chassis.waitUntilDone();
-            quadrant = 3;
-            pros::delay(50);
-            update = true;
-            pros::delay(50);
-            chassis.moveToPoint(24, 144-11, 750, {.maxSpeed = 80});
-            chassis.waitUntilDone();
-            leftMotors.move(80);
-            rightMotors.move(80);
-            pros::delay(1500);
-            leftMotors.move(0);
-            rightMotors.move(0);
-            pros::delay(50);
-
-            // move to fourth quadrant and score in long goal
-            chassis.moveToPoint(24, 144-20, 750, {.forwards = false});
-            chassis.waitUntilDone();
-            update = false;
-            tongue.set_value(false);
-            chassis.turnToHeading(270, 750);
-            chassis.waitUntilDone();
-            update = true;
-            pros::delay(50);
-            chassis.moveToPoint(chassis.getPose().x - 12, 144-20, 1000); // 750 timeout
-            chassis.waitUntilDone();
-            chassis.turnToHeading(0, 750);
-            chassis.waitUntilDone();
-            update = false;
-            pros::delay(50);
-            chassis.moveToPoint(6, 34, 2500, {.forwards = false, .maxSpeed = 80});
-            chassis.waitUntilDone();
-            quadrant = 4;
-
-            chassis.turnToHeading(270, 500);
-            chassis.waitUntilDone();
-            update = true;
             pros::delay(200);
-            chassis.moveToPoint(26, 34, 750, {.forwards = false});
-            chassis.waitUntilDone();
-            chassis.turnToHeading(180, 750);
-            chassis.waitUntilDone();
-            chassis.moveToPoint(26, 50, 750, {.forwards = false});
-            chassis.waitUntilDone();
-            hood.set_value(true);
-            hoodUp = true;
-            tongue.set_value(true);
-            leftMotors.move(-80);
-            rightMotors.move(-80);
-            pros::delay(1500);
-            leftMotors.move(0);
-            rightMotors.move(0);
-            
-            update = true;
-            pros::delay(50);
-            update = false;
-            chassis.moveToPoint(144-12, 144-32, 2500, {.forwards = false, .maxSpeed = 80});
-            chassis.waitUntilDone();
-            quadrant = 2;
-            update = true;
-            chassis.turnToHeading(90, 500);
-            chassis.waitUntilDone();
-            chassis.moveToPoint(144-22, 144-32, 750, {.forwards = false});
-            chassis.waitUntilDone();
-            chassis.turnToHeading(0, 500);
-            chassis.waitUntilDone();
-            chassis.moveToPoint(144-22, 144-43, 750, {.forwards = false});
-            chassis.waitUntilDone();
-            hood.set_value(true);
-            hoodUp = true;
-            chassis.turnToHeading(0, 500);
-            tongue.set_value(true);
-            leftMotors.move(-80);
-            rightMotors.move(-80);
-            pros::delay(1500);
-            leftMotors.move(0);
-            rightMotors.move(0);
-            pros::delay(50);
-
-            break;
-        case 4:
-            // Skills
-            quadrant = 1;
-            chassis.setPose(144-frontDS.get_distance()/25.4 - 2,rightDS.get_distance()/25.4 + 4.5, 90);
-            wing.set_value(true);
-
-            // descore matchload tube
-            chassis.moveToPoint(144-25, chassis.getPose().y, 1000, {.maxSpeed = 80});
-            chassis.waitUntilDone();
-            update = false;
-            chassis.turnToHeading(180, 500);
-            tongue.set_value(true);
-            chassis.waitUntilDone();
-            intakeAll = true;
-            update = true;
-            chassis.moveToPoint(144-25, 11, 1000);
-            chassis.waitUntilDone();
-            leftMotors.move(80);
-            rightMotors.move(80);
-            pros::delay(1500);
-            leftMotors.move(0);
-            rightMotors.move(0);
-            pros::delay(50);
-
-            // move to second quadrant and score in long goal
-            chassis.moveToPoint(144-25, 20, 750, {.forwards = false});
-            chassis.waitUntilDone();
-            update = false;
-            tongue.set_value(false);
-            chassis.turnToHeading(90, 500);
-            chassis.waitUntilDone();
-            update = true;
-            pros::delay(50);
-            chassis.moveToPoint(144-12, 20, 750);
-            chassis.waitUntilDone();
-            update = false;
-            chassis.turnToHeading(180, 500);
-            chassis.waitUntilDone();
-            update = true;
-            pros::delay(50);
-            update = false;
-            chassis.moveToPoint(144-12, 144-32, 2500, {.forwards = false, .maxSpeed = 80});
-            chassis.waitUntilDone();
-            quadrant = 2;
-            update = true;
-            chassis.turnToHeading(90, 500);
-            chassis.waitUntilDone();
-            chassis.moveToPoint(144-22, 144-32, 750, {.forwards = false});
-            chassis.waitUntilDone();
-            chassis.turnToHeading(0, 500);
-            chassis.waitUntilDone();
-            chassis.moveToPoint(144-22, 144-43, 750, {.forwards = false});
-            chassis.waitUntilDone();
-            hood.set_value(true);
-            hoodUp = true;
-            chassis.turnToHeading(0, 500);
-            tongue.set_value(true);
-            leftMotors.move(-80);
-            rightMotors.move(-80);
-            pros::delay(1500);
-            leftMotors.move(0);
-            rightMotors.move(0);
-            pros::delay(50);
-
-            // descore second matchload tube and score in long goal
-            chassis.moveToPoint(144-23, 144-20, 750);
-            hood.set_value(false);
-            hoodUp = false;
-            chassis.moveToPoint(144-23, 144-11, 750, {.maxSpeed = 80});
-            chassis.waitUntilDone();
-            leftMotors.move(80);
-            rightMotors.move(80);
-            pros::delay(1500);
-            leftMotors.move(0);
-            rightMotors.move(0);
-            chassis.moveToPoint(144-23, 144-43, 1000, {.forwards = false, .maxSpeed = 80});
-            chassis.waitUntilDone();
-            hood.set_value(true);
-            hoodUp = true;
-            chassis.turnToHeading(0, 500);
-            tongue.set_value(false);
-            leftMotors.move(-80);
-            rightMotors.move(-80);
-            pros::delay(1500);
-            leftMotors.move(0);
-            rightMotors.move(0);
-
-            // get mid balls and score in low goal
-            update = false;
-            pros::delay(50);
-            chassis.setPose(0,0,chassis.getPose().theta);
-            pros::delay(50);
-            chassis.moveToPoint(0, 15, 750);
-            chassis.waitUntilDone();
-            hood.set_value(false);
-            hoodUp = false;
-            chassis.turnToHeading(225, 500);
-            chassis.waitUntilDone();
-            chassis.moveToPoint(-25, -4, 1200, {.maxSpeed = 80});
-            pros::delay(600);
-            tongue.set_value(true);
-            chassis.waitUntilDone();
-            chassis.turnToHeading(270, 500);
-            chassis.waitUntilDone();
-            chassis.moveToPoint(-80, -4, 1500, {.maxSpeed = 80});
-            pros::delay(300);
-            tongue.set_value(false);
-            pros::delay(600);
-            tongue.set_value(true);
-            chassis.waitUntilDone();
-            chassis.turnToHeading(135, 750);
-            chassis.waitUntilDone();
-            tongue.set_value(false);
-            chassis.moveToPoint(-68, -12, 1000, {.maxSpeed = 80});
-            chassis.waitUntilDone();
-            chassis.turnToHeading(145, 750);
-            chassis.waitUntilDone(); // delete for time save
-            firstStage.set_value(true);
-            intakeAll = false;
-            lowGoal = true;
-            pros::delay(1500);
-
-            // descore matchload tube in third quadrant
-            chassis.moveToPoint(-99, 20, 2000, {.forwards = false, .maxSpeed = 80});
-            pros::delay(300);
-            firstStage.set_value(false);
-            tongue.set_value(true);
-            lowGoal = false;
-            intakeAll = true;
-            chassis.waitUntilDone();
-            chassis.turnToHeading(0, 750);
-            chassis.waitUntilDone();
-            chassis.moveToPoint(-100, 36, 750, {.maxSpeed = 80});
-            chassis.waitUntilDone();
-            leftMotors.move(80);
-            rightMotors.move(80);
-            pros::delay(1500);
-            // quadrant = 3;
-            // pros::delay(50);
-            // update = true;
-            // pros::delay(50);
-            leftMotors.move(0);
-            rightMotors.move(0);
-
-            // go to fourth quadrant and score in long goal
-            // chassis.moveToPoint(26, 144-20, 750, {.forwards = false});
-            chassis.moveToPoint(-100, 20, 750, {.forwards = false});
-            chassis.waitUntilDone();
-            // update = false;
-            tongue.set_value(false);
-            chassis.turnToHeading(270, 500);
-            chassis.waitUntilDone();
-            // update = true;
-            // pros::delay(50);
-            // chassis.moveToPoint(12, 144-20, 750);
-            chassis.moveToPoint(-114, 20, 750);
-            chassis.waitUntilDone();
-            // update = false;
-            chassis.turnToHeading(5, 750);
-            chassis.waitUntilDone();
-            // update = true;
-            // pros::delay(50);
-            // update = false;
-            // chassis.moveToPoint(12, 32, 2500, {.forwards = false, .maxSpeed = 80});
-            chassis.moveToPoint(-123, -65, 2500, {.forwards = false, .maxSpeed = 80});
-            chassis.waitUntilDone();
-            // quadrant = 4;
-            // update = true;
-            chassis.turnToHeading(270, 500);
-            chassis.waitUntilDone();
-            chassis.moveToPoint(-109, -65, 750, {.forwards = false});
-            chassis.waitUntilDone();
-            chassis.turnToHeading(180, 750);
-            chassis.waitUntilDone();
-            chassis.moveToPoint(-109, -52, 750, {.forwards = false});
-            chassis.waitUntilDone();
-            hood.set_value(true);
-            hoodUp = true;
-            tongue.set_value(true);
-            leftMotors.move(-80);
-            rightMotors.move(-80);
-            pros::delay(1500);
-            leftMotors.move(0);
-            rightMotors.move(0);
-            chassis.setPose(0,0,0);
-            pros::delay(50);
-
-            // get 4th quad tube and score in long goal
-            chassis.moveToPoint(0, 25, 1000);
-            chassis.moveToPoint(0, 35, 1000, {.maxSpeed = 60});
-            hood.set_value(false);
-            hoodUp = false;
-            chassis.waitUntilDone();
-            leftMotors.move(80);
-            rightMotors.move(80);
-            pros::delay(1500);
-            leftMotors.move(0);
-            rightMotors.move(0);
-            pros::delay(50);
-            chassis.moveToPoint(0, -5, 1000, {.forwards = false, .maxSpeed = 80});
-            chassis.waitUntilDone();
-            hood.set_value(true);
-            hoodUp = true;
-            tongue.set_value(false);
-            leftMotors.move(-80);
-            rightMotors.move(-80);
-            pros::delay(1500);
-            leftMotors.move(0);
-            rightMotors.move(0);
-            chassis.setPose(0,0,0);
-            pros::delay(50);
-
-            // park and clear
-            chassis.moveToPoint(-10, 30, 1500, {.maxSpeed = 80});
-            chassis.waitUntilDone();
-            hood.set_value(false);
-            hoodUp = false;
-            chassis.turnToHeading(-35, 750);
-            chassis.waitUntilDone();
-            chassis.moveToPoint(-50, 40, 2000);
-            pros::delay(470);
-            tongue.set_value(true);
-
-            break;
-        case 5:
-            // 9 ball
-            // elims w box bots
-            color = "none";
-            chassis.setPose(0,0,0);
-            update = false;
-
-            chassis.turnToHeading(25, 250);
-            chassis.waitUntilDone();
-            intakeAll = true;
-            chassis.moveToPoint(15, 25, 1000);
-            pros::delay(400);
-            tongue.set_value(true);
-            chassis.waitUntilDone();
-            chassis.moveToPoint(32, 40, 1000, {.maxSpeed = 80});
-            pros::delay(100);
-            tongue.set_value(false);
-            // pros::delay(400);
-            // tongue.set_value(true);
-            chassis.waitUntilDone();
-            // chassis.turnToHeading(90, 250);
-            // chassis.waitUntilDone();
-            chassis.moveToPoint(20, 38, 750, {.forwards = false});
-            chassis.waitUntilDone();
-            tongue.set_value(false);
-            chassis.turnToHeading(0, 500);
-            chassis.waitUntilDone();
-            chassis.moveToPoint(20, 5, 1000, {.forwards = false, .maxSpeed = 90});
-            chassis.waitUntilDone();
-            chassis.turnToHeading(90, 500);
-            chassis.waitUntilDone();
-            chassis.moveToPoint(41, 5, 750);
-            chassis.waitUntilDone();
-            chassis.turnToHeading(180, 500);
-            chassis.waitUntilDone();
-            chassis.moveToPoint(41, 23, 750, {.forwards = false});
-            chassis.waitUntilDone();
-            chassis.setPose(0,0,0);
-            hood.set_value(true);
-            hoodUp = true;
-            pros::delay(1000);
-            tongue.set_value(true);
-            chassis.moveToPoint(0, 15, 650);
-            chassis.moveToPoint(0, 31, 1000, {.maxSpeed = 60});
-            hood.set_value(false);
-            hoodUp = false;
-            chassis.waitUntilDone();
-            chassis.moveToPoint(0, 15, 1000, {.forwards = false});
-            chassis.waitUntilDone();
-            chassis.turnToHeading(130, 750);
-            chassis.waitUntilDone();
-            tongue.set_value(false);
-            chassis.moveToPoint(32, -13, 1000, {.maxSpeed = 90});
-            chassis.waitUntilDone();
-            intakeAll = false;
-            lowGoal = true;
-            pros::delay(1000);
-            chassis.moveToPoint(13, -2, 1000, {.forwards = false, .maxSpeed = 90});
-            chassis.waitUntilDone();
-            chassis.turnToHeading(0, 500);
-            chassis.waitUntilDone();
-            chassis.moveToPoint(13, -16, 2000, {.forwards = false});
-            chassis.waitUntilDone();
-            lowGoal = false;
-
-            break;
-        case 6:
-            // right 4+3 wing
-            quadrant = 1;
-            chassis.setPose(144-frontDS.get_distance()/25.4 - 2,rightDS.get_distance()/25.4 + 4.5, 90);
-
-            // descore matchload tube and score in long goal
-            chassis.moveToPoint(144-25, chassis.getPose().y, 1000, {.maxSpeed = 80});
-            chassis.waitUntilDone();
-            update = false;
-            chassis.turnToHeading(180, 500);
-            tongue.set_value(true);
-            chassis.waitUntilDone();
-            intakeAll = true;
-            update = true;
-            chassis.moveToPoint(144-24, 11, 750);
-            chassis.waitUntilDone();
-            leftMotors.move(80);
-            rightMotors.move(80);
-            pros::delay(100);
-            leftMotors.move(0);
-            rightMotors.move(0);
-            pros::delay(50);
-            chassis.moveToPoint(144-23, 45, 1000, {.forwards = false, .maxSpeed = 80});
-            chassis.waitUntilDone();
-            hood.set_value(true);
-            hoodUp = true;
-            chassis.turnToHeading(180, 500);
-            leftMotors.move(-80);
-            rightMotors.move(-80);
-            pros::delay(600);
             leftMotors.move(0);
             rightMotors.move(0);
             tongue.set_value(false);
 
-            // get center balls and score in low goal
-            chassis.moveToPoint(144-24, 30, 750);
+            // get center balls
+            chassis.moveToPoint(144-24, 23, 750, {.maxSpeed = 80});
             chassis.waitUntilDone();
             update = false;
             chassis.turnToHeading(-45, 500);
             hood.set_value(false);
             hoodUp = false;
             chassis.waitUntilDone();
-            chassis.moveToPoint(144-47, 46, 1000);
-            pros::delay(500);
+            chassis.moveToPoint(144-52, 48, 750);
+            pros::delay(650);
             tongue.set_value(true);
             chassis.waitUntilDone();
-            chassis.turnToHeading(315, 500);
+            chassis.turnToHeading(270, 500);
             chassis.waitUntilDone();
-            chassis.moveToPoint(144-60, 58, 1000);
+            chassis.moveToPoint(144-108, 48, 750);
+            pros::delay(300);
             tongue.set_value(false);
+            pros::delay(600);
+            tongue.set_value(true);
+            chassis.waitUntilDone();
+
+            // move to and score in left long goal
+            chassis.turnToHeading(-125, 500);
+            chassis.waitUntilDone();
+            chassis.moveToPoint(19, 30, 750);
+            chassis.waitUntilDone();
+            quadrant = 4;
+            update = true;
+            chassis.turnToHeading(180, 500);
+            chassis.waitUntilDone();
+            chassis.moveToPoint(23, 45, 500, {.forwards = false});
+            chassis.waitUntilDone();
+            hood.set_value(true);
+            hoodUp = true;
+            leftMotors.move(-80);
+            rightMotors.move(-80);
+            pros::delay(700);
+            leftMotors.move(0);
+            rightMotors.move(0);
+
+            // descore near left matchload tube
+            chassis.moveToPoint(24, 12, 1500, {.maxSpeed = 60});
+            pros::delay(200);
+            hood.set_value(false);
+            hoodUp = false;
+            chassis.waitUntilDone();
+
+            // score in mid goal
+            chassis.moveToPoint(24, 24, 750, {.forwards = false});
+            chassis.waitUntilDone();
+            chassis.turnToHeading(225, 500);
+            chassis.waitUntilDone();
+            chassis.moveToPoint(61, 63, 1500, {.forwards = false, .maxSpeed = 80});
+            chassis.waitUntilDone();
+            intakeAll = false;
+            lowGoal = true;
+            pros::delay(200);
+            lowGoal = false;
+            midGoalAll = true;
+
+            break;
+        case 4:
+            // right 7 ball
+            update = false;
+            quadrant = 1;
+            wing.set_value(true);
+            chassis.setPose(144-rightDS.get_distance()/25.4 - 4.5,22, 0);
+
+            // get 3 balls
+            intakeAll = true;
+            chassis.moveToPoint(144-48, 50, 1200, {.maxSpeed = 80});
+            pros::delay(600);
+            tongue.set_value(true);
+            chassis.waitUntilDone();
+            chassis.turnToHeading(135, 750);
+            chassis.waitUntilDone();
+
+            // go to matchload tube and descore then score in long goal
+            chassis.moveToPoint(144-24, 25, 1000, {.maxSpeed = 80});
+            chassis.waitUntilDone();
+            update = true;
+            chassis.turnToHeading(180, 500);
+            chassis.waitUntilDone();
+            chassis.moveToPoint(144-24, 11, 800, {.maxSpeed = 80});
+            chassis.waitUntilDone();
+            chassis.moveToPoint(144-24, 45, 900, {.forwards = false, .maxSpeed = 80});
+            chassis.waitUntilDone();
+            hood.set_value(true);
+            hoodUp = true;
+            leftMotors.move(-80);
+            rightMotors.move(-80);
+            pros::delay(1200);
+            leftMotors.move(0);
+            rightMotors.move(0);
+            tongue.set_value(false);
+
+            // wing push
+            chassis.moveToPoint(144-24, 30, 500, {.maxSpeed = 80});
+            chassis.waitUntilDone();
+            chassis.turnToHeading(90, 500);
+            chassis.waitUntilDone();
+            update = false;
+            pros::delay(100);
+            chassis.moveToPoint(144-32, 30, 500, {.forwards = false, .maxSpeed = 80});
+            chassis.waitUntilDone();  
+            chassis.turnToHeading(180, 500);
+            chassis.waitUntilDone();
+            wing.set_value(false);
+            chassis.moveToPoint(144-32, 55, 750, {.forwards = false});
+            chassis.waitUntilDone();
+
+            break;
+        case 5:
+            // left 7 ball
+            update = false;
+            quadrant = 4;
+            chassis.setPose(leftDS.get_distance()/25.4 + 4.5,24, 0);
+
+            // get 3 balls
+            intakeAll = true;
+            chassis.moveToPoint(48, 50, 1200, {.maxSpeed = 80});
+            pros::delay(600);
+            tongue.set_value(true);
+            chassis.waitUntilDone();
+            chassis.turnToHeading(-135, 750);
+            chassis.waitUntilDone();
+
+            // descore mathload tube and score in long goal
+            chassis.moveToPoint(22, 30, 1000, {.maxSpeed = 80});
+            chassis.waitUntilDone();
+            update = true;
+            chassis.turnToHeading(180, 500);
+            chassis.waitUntilDone();
+            chassis.moveToPoint(23, 7, 1100, {.maxSpeed = 60});
+            chassis.waitUntilDone();
+            chassis.moveToPoint(23, 45, 900, {.forwards = false, .maxSpeed = 80});
+            chassis.waitUntilDone();
+            hood.set_value(true);
+            hoodUp = true;
+            leftMotors.move(-80);
+            rightMotors.move(-80);
+            pros::delay(1400);
+            leftMotors.move(0);
+            rightMotors.move(0);
+            tongue.set_value(false);
+
+            // wing push
+            chassis.moveToPoint(23, 32, 500, {.maxSpeed = 80});
+            chassis.waitUntilDone();
+            update = false;
+            pros::delay(100);
+            chassis.turnToHeading(270, 500);
+            chassis.waitUntilDone();
+            chassis.moveToPoint(11, 30, 500, {.maxSpeed = 80});
+            chassis.waitUntilDone();
+            chassis.turnToHeading(180, 500);
+            chassis.waitUntilDone();
+            wing.set_value(false);
+            chassis.moveToPoint(11, 55, 750, {.forwards = false});
+            chassis.waitUntilDone();
+
+            break;
+        case 6:
+            // right 3+4 ball
+            update = false;
+            quadrant = 1;
+            wing.set_value(true);
+            chassis.setPose(144-rightDS.get_distance()/25.4 - 4.5,22, 0);
+
+            // get 3 balls
+            intakeAll = true;
+            chassis.moveToPoint(144-47, 50, 1200, {.maxSpeed = 80});
+            pros::delay(600);
+            tongue.set_value(true);
+            chassis.waitUntilDone();
+
+            // score in low goal
+            chassis.turnToHeading(-45, 500);
+            chassis.waitUntilDone();
+            tongue.set_value(false);
+            pros::delay(50);
+            chassis.moveToPoint(144-60, 65, 750, {.maxSpeed = 80});
             chassis.waitUntilDone();
             firstStage.set_value(true);
             intakeAll = false;
             lowGoal = true;
             pros::delay(1000);
-
-            // wing push
-            chassis.moveToPoint(144-37, 48, 1000, {.forwards = false}); // 36
-            chassis.waitUntilDone();
-            chassis.turnToHeading(180, 500);
-            chassis.waitUntilDone();
-            chassis.moveToPoint(144-36, 62, 1000, {.forwards = false}); // 35
-            chassis.waitUntilDone();
-
-            break;
-        case 7:
-            // left 4+3 wing
-            // right 4+3 wing
-            wing.set_value(true);
-            quadrant = 4;
-            chassis.setPose(frontDS.get_distance()/25.4 + 2,leftDS.get_distance()/25.4 + 4.5, 270);
+            lowGoal = false;
 
             // descore matchload tube and score in long goal
-            chassis.moveToPoint(24, chassis.getPose().y, 1000, {.maxSpeed = 80});
-            chassis.waitUntilDone();
-            update = false;
-            chassis.turnToHeading(180, 750);
-            tongue.set_value(true);
-            chassis.waitUntilDone();
-            intakeAll = true;
-            update = true;
-            chassis.moveToPoint(24, 11, 750);
-            chassis.waitUntilDone();
-            leftMotors.move(80);
-            rightMotors.move(80);
+            chassis.moveToPoint(144-24, 30, 1500, {.forwards = false, .maxSpeed = 80});
             pros::delay(200);
-            leftMotors.move(0);
-            rightMotors.move(0);
-            pros::delay(50);
-            chassis.moveToPoint(24, 45, 1000, {.forwards = false}); // max speed 80
+            intakeAll = true;
+            firstStage.set_value(false);
+            chassis.waitUntilDone();
+            chassis.turnToHeading(180, 750);
+            chassis.waitUntilDone();
+            tongue.set_value(true);
+            update = true;
+            pros::delay(100);
+            chassis.moveToPoint(144-24, 11, 1200, {.maxSpeed = 60});
+            chassis.waitUntilDone();
+            chassis.moveToPoint(144-23, 45, 1000, {.forwards = false, .maxSpeed = 80});
             chassis.waitUntilDone();
             hood.set_value(true);
             hoodUp = true;
-            chassis.turnToHeading(180, 500);
             leftMotors.move(-80);
             rightMotors.move(-80);
-            pros::delay(600);
+            pros::delay(1200);
             leftMotors.move(0);
             rightMotors.move(0);
-            tongue.set_value(false);
 
-            // get center balls and score in mid goal
-            chassis.moveToPoint(24, 26, 750);
-            chassis.waitUntilDone();
+            // // wing push
+            // chassis.moveToPoint(144-23, 30, 500, {.maxSpeed = 80});
+            // chassis.waitUntilDone();
+            // chassis.turnToHeading(90, 500);
+            // chassis.waitUntilDone();
+            // update = false;
+            // pros::delay(100);
+            // chassis.moveToPoint(144-32, 27, 500, {.forwards = false, .maxSpeed = 80});
+            // chassis.waitUntilDone();
+            // chassis.turnToHeading(180, 500);
+            // chassis.waitUntilDone();
+            // wing.set_value(false);
+            // chassis.moveToPoint(144-32, 52, 750, {.forwards = false});
+            // chassis.waitUntilDone();
+
+            break;
+        case 7:
+            // left 3+4 ball
             update = false;
-            pros::delay(100);
-            chassis.turnToHeading(45, 750, {.maxSpeed = 80});
-            hood.set_value(false);
-            hoodUp = false;
-            chassis.waitUntilDone();
-            chassis.moveToPoint(55, 45, 1000);
+            quadrant = 4;
+            chassis.setPose(leftDS.get_distance()/25.4 + 4.5,24, 0);
+
+            // get 3 balls
+            intakeAll = true;
+            chassis.moveToPoint(48, 50, 1200, {.maxSpeed = 80});
             pros::delay(600);
             tongue.set_value(true);
             chassis.waitUntilDone();
-            chassis.turnToHeading(215, 500);
+
+            // move to and score in left long goal
+            chassis.turnToHeading(-125, 500);
             chassis.waitUntilDone();
-            chassis.moveToPoint(61, 59, 1000, {.forwards = false});
-            tongue.set_value(false);
+            chassis.moveToPoint(24, 35, 750);
+            chassis.waitUntilDone();
+            chassis.turnToHeading(180, 500);
+            chassis.waitUntilDone();
+            update = true;
+            pros::delay(100);
+            chassis.moveToPoint(23, 45, 500, {.forwards = false});
+            chassis.waitUntilDone();
+            hood.set_value(true);
+            hoodUp = true;
+            leftMotors.move(-80);
+            rightMotors.move(-80);
+            pros::delay(700);
+            leftMotors.move(0);
+            rightMotors.move(0);
+
+            // descore near left matchload tube
+            chassis.moveToPoint(24, 11, 1700, {.maxSpeed = 60});
+            pros::delay(200);
+            hood.set_value(false);
+            hoodUp = false;
+            chassis.waitUntilDone();
+
+            // score in mid goal
+            chassis.moveToPoint(24, 24, 750, {.forwards = false});
+            chassis.waitUntilDone();
+            chassis.turnToHeading(225, 500);
+            chassis.waitUntilDone();
+            chassis.moveToPoint(62, 62, 1500, {.forwards = false, .maxSpeed = 80});
             chassis.waitUntilDone();
             intakeAll = false;
             lowGoal = true;
             pros::delay(200);
+            lowGoal = false;
             midGoalAll = true;
             pros::delay(1000);
+            tongue.set_value(false);
 
             // wing push
-            chassis.moveToPoint(35, 40, 1000);
+            chassis.moveToPoint(37, 40, 1000, {.maxSpeed = 80});
             chassis.waitUntilDone();
-            chassis.turnToHeading(0, 500);
+            chassis.turnToHeading(0, 750);
             chassis.waitUntilDone();
-            wing.set_value(false);
-            chassis.moveToPoint(34, 62, 1000);
+            chassis.moveToPoint(37, 60, 1000);
             chassis.waitUntilDone();
+            chassis.turnToHeading(45, 1000);
 
             break;
         case 8:
@@ -1107,7 +805,7 @@ void autonomous() {
             quadrant = 2;
             tongue.set_value(false);
             chassis.waitUntilDone();
-            chassis.moveToPoint(144-25, 144-20, 750, {.forwards = false, .maxSpeed = 80});
+            chassis.moveToPoint(144-23, 144-20, 750, {.forwards = false, .maxSpeed = 80});
             chassis.waitUntilDone();
             chassis.turnToHeading(0, 750);
             chassis.waitUntilDone();
@@ -1123,7 +821,7 @@ void autonomous() {
 
             // descore far right matchload tube and score in long goal
             tongue.set_value(true);
-            chassis.moveToPoint(144-22, 144-12, 1750, {.maxSpeed = 60});
+            chassis.moveToPoint(144-21, 144-12, 1750, {.maxSpeed = 60});
             chassis.waitUntilDone();
             hood.set_value(false);
             hoodUp = false;
@@ -1176,13 +874,13 @@ void autonomous() {
             chassis.turnToHeading(-88, 1000, {.maxSpeed = 80});
             chassis.waitUntilDone();
             chassis.moveToPoint(43, 144-45, 2500, {.maxSpeed = 80});
-            pros::delay(1000);
+            pros::delay(900);
             tongue.set_value(true);
             quadrant = 3;
             chassis.waitUntilDone();
-            chassis.turnToHeading(-40, 750);
+            chassis.turnToHeading(-45, 750);
             chassis.waitUntilDone();
-            chassis.moveToPoint(19, 144-25, 1000, {.maxSpeed = 80}); // 750
+            chassis.moveToPoint(21, 144-25, 1000, {.maxSpeed = 80}); // 750
             chassis.waitUntilDone();
             chassis.turnToHeading(0, 750);
             chassis.waitUntilDone();
@@ -1220,16 +918,18 @@ void autonomous() {
             chassis.waitUntilDone();
             update = false;
             pros::delay(100);
-            chassis.moveToPoint(9, 40, 2500, {.forwards = false, .maxSpeed = 80});
+            chassis.moveToPoint(10, 40, 2500, {.forwards = false, .maxSpeed = 80});
             pros::delay(1000);
             quadrant = 4;
             tongue.set_value(false);
             chassis.waitUntilDone();
-            chassis.moveToPoint(23.5, 25, 1000, {.forwards = false, .maxSpeed = 80});
+            chassis.moveToPoint(24, 25, 1000, {.forwards = false, .maxSpeed = 80});
             chassis.waitUntilDone();
             chassis.turnToHeading(180, 750);
             chassis.waitUntilDone();
-            chassis.moveToPoint(23.5, 45, 1000, {.forwards = false, .maxSpeed = 80});
+            update = true;
+            pros::delay(100);
+            chassis.moveToPoint(23, 45, 1000, {.forwards = false, .maxSpeed = 80});
             chassis.waitUntilDone();
             hood.set_value(true);
             hoodUp = true;
@@ -1241,7 +941,7 @@ void autonomous() {
             tongue.set_value(true);
 
             // descore near left matchload tube and scoe in long goal
-            chassis.moveToPoint(23.5, 12, 1500, {.maxSpeed = 60});
+            chassis.moveToPoint(23, 12, 1500, {.maxSpeed = 60});
             chassis.waitUntilDone();
             hood.set_value(false);
             hoodUp = false;
@@ -1250,7 +950,7 @@ void autonomous() {
             pros::delay(1500);
             leftMotors.move(0);
             rightMotors.move(0);
-            chassis.moveToPoint(23.5, 45, 1000, {.forwards = false, .maxSpeed = 80});
+            chassis.moveToPoint(23, 45, 1000, {.forwards = false, .maxSpeed = 80});
             chassis.waitUntilDone();
             hood.set_value(true);
             hoodUp = true;
@@ -1260,19 +960,81 @@ void autonomous() {
             leftMotors.move(0);
             rightMotors.move(0);
             tongue.set_value(false);
-            chassis.setPose(0,0,0);
 
             // clear and park
-            chassis.moveToPoint(-7, 30, 1000, {.maxSpeed = 80});
+            chassis.moveToPoint(30, 15, 1000, {.maxSpeed = 80});
             chassis.waitUntilDone();
             hood.set_value(false);
             hoodUp = false;
-            chassis.turnToHeading(-45, 750);
+            chassis.turnToHeading(135, 750);
             chassis.waitUntilDone();
-            chassis.moveToPoint(-40, 40, 2000);
-            pros::delay(400);
+            chassis.moveToPoint(69, 4, 2000);
+            pros::delay(440);
             tongue.set_value(true);
 
+
+            break;
+        case 9: 
+            // elims w 40kE
+            quadrant = 1;
+            chassis.setPose(144-frontDS.get_distance()/25.4 - 2,rightDS.get_distance()/25.4 + 4.5, 90);
+
+            // descore matchload tube and score in long goal
+            chassis.moveToPoint(144-24, chassis.getPose().y, 1000, {.maxSpeed = 100});
+            chassis.waitUntilDone();
+            update = false;
+            chassis.turnToHeading(180, 500);
+            tongue.set_value(true);
+            chassis.waitUntilDone();
+            intakeAll = true;
+            update = true;
+            chassis.moveToPoint(144-23, 11, 850);
+            chassis.waitUntilDone();
+            // add move forward
+            // pros::delay(100);
+            chassis.moveToPoint(144-23, 45, 900, {.forwards = false, .maxSpeed = 100});
+            chassis.waitUntilDone();
+            hood.set_value(true);
+            hoodUp = true;
+            chassis.turnToHeading(180, 500);
+            leftMotors.move(-80);
+            rightMotors.move(-80);
+            pros::delay(800);
+            leftMotors.move(0);
+            rightMotors.move(0);
+            tongue.set_value(false);
+
+            // get center balls and score in low goal
+            chassis.moveToPoint(144-23, 27, 750, {.maxSpeed = 80});
+            chassis.waitUntilDone();
+            update = false;
+            chassis.turnToHeading(-45, 750);
+            hood.set_value(false);
+            hoodUp = false;
+            chassis.waitUntilDone();
+            chassis.moveToPoint(144-52, 49, 1000);
+            pros::delay(600);
+            tongue.set_value(true);
+            chassis.waitUntilDone();
+            chassis.turnToHeading(315, 500);
+            chassis.waitUntilDone();
+            tongue.set_value(false);
+            chassis.moveToPoint(144-61, 61, 750, {.maxSpeed = 100});
+            chassis.waitUntilDone();
+            chassis.turnToHeading(315, 500);
+            firstStage.set_value(true);
+            intakeAll = false;
+            lowGoal = true;
+            pros::delay(1500);
+            lowGoal = false;
+
+            // wing push
+            chassis.moveToPoint(144-37, 35, 1000, {.forwards = false, .maxSpeed = 80});
+            chassis.waitUntilDone();
+            chassis.turnToHeading(180, 750);
+            chassis.waitUntilDone();
+            chassis.moveToPoint(144-37, 55, 1000, {.forwards = false});
+            chassis.waitUntilDone();
 
             break;
     }
