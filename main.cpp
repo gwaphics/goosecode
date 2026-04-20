@@ -18,26 +18,28 @@ using namespace std;
 using namespace pros;
 pros::Controller controller(pros::E_CONTROLLER_MASTER);
 // dt motors
-pros::MotorGroup leftMotors({15, 16, 20}, pros::MotorGearset::blue); // left motors
-pros::MotorGroup rightMotors({-13, -14,-18}, pros::MotorGearset::blue); // right motors
+pros::MotorGroup rightMotors({5, 11, 13}, pros::MotorGearset::blue); // left motors
+pros::MotorGroup leftMotors({-7, -10,-12}, pros::MotorGearset::blue); // right motors
 // other motors
-pros::Motor counterRoller(6, pros::MotorGearset::green);
-pros::MotorGroup mainIntake({5, -12}, pros::MotorGearset::green);
+pros::Motor counterRoller(18, pros::MotorGearset::green);
+pros::MotorGroup mainIntake({15, -19}, pros::MotorGearset::green);
 bool load = false;
 bool unload = false;
 // sensors
-pros::Distance frontDS(4);
+pros::Distance frontDS(8);
 //pros::Distance backDS(10);
-pros::Distance rightDS(9);
+pros::Distance rightDS(16);
 pros::Distance leftDS(21);
 pros::Optical colorSense(19);
 // pnaumatics
-pros::adi::DigitalOut tongue('C');
+pros::adi::DigitalOut tongue('G');
 pros::adi::DigitalOut frontWing('A');
-pros::adi::DigitalOut backWing('H');
+pros::adi::DigitalOut backWing('E');
 pros::adi::DigitalOut hood('F');
 pros::adi::DigitalOut firstStage('D');
-pros::adi::DigitalOut midGoalDescore('G');
+pros::adi::DigitalOut midGoalDescore('H');
+pros::adi::DigitalOut B('B');
+pros::adi::DigitalOut C('C');
 
 
 bool stopSkills = false;
@@ -50,9 +52,9 @@ lemlib::Drivetrain drivetrain(&leftMotors, // left motor group
                               0 // horizontal drift is 2 (for now)
 );
 // create an imu on port 3
-pros::Imu imu1(19);
+pros::Imu imu1(17);
 // create a v5 rotation sensor on port 1
-pros::Rotation vertical_encoder(7);
+pros::Rotation vertical_encoder(4);
 // horizontal tracking wheel
 lemlib::TrackingWheel vertical_tracking_wheel(&vertical_encoder, lemlib::Omniwheel::NEW_2,0);
 lemlib::OdomSensors sensors(&vertical_tracking_wheel, // vertical tracking wheel 1, set to null
@@ -63,26 +65,26 @@ lemlib::OdomSensors sensors(&vertical_tracking_wheel, // vertical tracking wheel
 );
 
 // lateral PID controller
- lemlib::ControllerSettings lateral_controller(10, // proportional gain (kP)
-                                               0, // integral gain (kI)
-                                               45, // derivative gain (kD)
-                                               3, // anti windup
-                                               1, // small error range, in inches
-                                               100, // small error range timeout, in milliseconds
-                                               3, // large error range, in inches
-                                               500, // large error range timeout, in milliseconds
-                                               10 // maximum acceleration (slew)
+lemlib::ControllerSettings lateral_controller(8, // proportional gain (kP) //8
+                                              0, // integral gain (kI)
+                                              50, // derivative gain (kD) //50
+                                              0, // anti windup
+                                              0, // small error range, in inches
+                                              0, // small error range timeout, in milliseconds
+                                              0, // large error range, in inches
+                                              0, // large error range timeout, in milliseconds
+                                              10 // maximum acceleration (slew)
 );
 
 // angular PID controller
-lemlib::ControllerSettings angular_controller(2, // proportional gain (kP)
+lemlib::ControllerSettings angular_controller(4, // proportional gain (kP) //2
                                               0, // integral gain (kI)
-                                              17, // derivative gain (kD)
-                                              3, // anti windup
-                                              1, // small error range, in inches
-                                              100, // small error range timeout, in milliseconds
-                                              3, // large error range, in inches
-                                              500, // large error range timeout, in milliseconds
+                                              52, // derivative gain (kD) //50
+                                              0, // anti windup
+                                              0, // small error range, in inches
+                                              0, // small error range timeout, in milliseconds
+                                              0, // large error range, in inches
+                                              0, // large error range timeout, in milliseconds
                                               0 // maximum acceleration (slew)
 );
 
@@ -191,7 +193,7 @@ void lowScore() {
 }
 
 double safeDistanceInchesX(pros::Distance& sensor) {
-    if (sensor.get_distance() <= 0 || sensor.get_distance() > 1200) {
+    if (sensor.get_distance() <= 0 || sensor.get_distance() > 2000) {
         return chassis.getPose().x;
     }
 
@@ -199,14 +201,14 @@ double safeDistanceInchesX(pros::Distance& sensor) {
 }
 
 double safeDistanceInchesY(pros::Distance& sensor) {
-    if (sensor.get_distance() <= 0 || sensor.get_distance() > 1200) {
+    if (sensor.get_distance() <= 0 || sensor.get_distance() > 2000) {
         return chassis.getPose().y;
     }
 
     return sensor.get_distance() / 25.4;
 }
 
-bool update = true;
+bool update = false;
 int quadrant = 1;
 int tolerance = 5;
 
@@ -230,14 +232,16 @@ void initialize() {
             // print robot location to the brain screen
             //pros::lcd::print(0, "Dist: %i", colorSense.get_proximity());
             pros::lcd::print(0, "X Pos: %f", chassis.getPose().x); // x
-            pros::lcd::print(1, "Y Pos: %f", chassis.getPose().y); // x
+            // pros::lcd::print(0, "X Pos: %f", leftDS.get_distance()); // x
+            pros::lcd::print(1, "Y Pos: %f", chassis.getPose().y); // y
             /*pros::lcd::print(0, "X: %f", chassis.getPose().x); // x
             pros::lcd::print(1, "Y: %f", chassis.getPose().y); // y*/
             pros::lcd::print(2, "Theta: %f", chassis.getPose().theta); // heading
             //string toPrint = "(" + to_string((int)chassis.getPose().x) + "," + to_string((int)chassis.getPose().y) + "," + to_string((int)chassis.getPose().theta) + ")";
 
-            string toPrint = to_string(round(chassis.getPose().theta));
-            controller.set_text(0,0,toPrint);
+            // string toPrint = to_string(round(chassis.getPose().x));
+            // controller.set_text(0,0,toPrint);
+            // controller.set_text(0,12,to_string(round(chassis.getPose().y)));
 
             // delay to save resources
             pros::delay(50);
@@ -315,18 +319,19 @@ void initialize() {
 /* 
     0 - Lateral PID test
     1 - Angular PID test
-    2 - SAWP
-    3 - Counter SAWP
-    4 - Right 7 ball wing push
-    5 - Left 7 ball wing push
-    6 - Right 3+4 ball wing push
-    7 - Left 3+4 ball wing push
-    8 - States Skills
-    9 - Elims w 40kE
+    2 - Left 7 Ball Wing Push
+    3 - Right 7 Ball Wing Push
+    4 - Left 4+3 double descore
+    5 - Right 4+3
+    6 - All mid goal SAWP
+    7 - Reg SAWP
 */
-int chosenAuton = 4;
+int chosenAuton = 1;
 
 void autonomous() {
+    leftMotors.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+    rightMotors.set_brake_mode(pros::E_MOTOR_BRAKE_BRAKE);
+
     switch(chosenAuton){
         case 0:
             // lateral pid test
@@ -337,9 +342,365 @@ void autonomous() {
             break;
         case 1:
             // angular pid test
+            update = false;
             chassis.setPose(0,0,0);
 
-            chassis.turnToHeading(90, 10000);
+            chassis.turnToHeading(180, 10000);
+            break;
+        case 2:
+            // Left 7 Ball Wing Push
+            update = true;
+            quadrant = 4;
+            chassis.setPose(safeDistanceInchesX(leftDS) + 4.5, 24, 0);
+
+            intakeAll = true;
+            chassis.moveToPoint(46,50,1000);
+            pros::delay(500);
+            tongue.set_value(true);
+            update = false;
+            chassis.waitUntilDone();
+            chassis.turnToHeading(-160,1000);
+            chassis.waitUntilDone();
+            chassis.moveToPoint(35, 30, 1000);
+            chassis.waitUntilDone();
+            chassis.turnToHeading(-90, 750);
+            update = true;
+            chassis.waitUntilDone();
+            chassis.moveToPoint(23, 29, 1000, {.maxSpeed = 80});
+            chassis.waitUntilDone();
+            chassis.turnToHeading(180, 750);
+            chassis.waitUntilDone();
+            chassis.moveToPoint(23, 12, 1200, {.maxSpeed = 80});
+            chassis.waitUntilDone();
+            chassis.moveToPoint(23, 45, 1000, {.forwards = false});
+            chassis.waitUntilDone();
+            chassis.waitUntilDone();
+            leftMotors.move(-80);
+            rightMotors.move(-80);
+            hood.set_value(true);
+            hoodUp = true;
+            tongue.set_value(false);
+            pros::delay(1200);
+            chassis.moveToPoint(23, 32, 750);
+            chassis.waitUntilDone();
+            chassis.turnToHeading(-90, 750);
+            chassis.waitUntilDone();
+            chassis.moveToPoint(34, 31, 750, {.forwards = false});
+            chassis.waitUntilDone();
+            chassis.turnToHeading(0, 750);
+            chassis.waitUntilDone();
+            chassis.moveToPoint(34, 53, 750);
+            chassis.waitUntilDone();
+            break;
+        case 3:
+            // Right 7 Ball Wing Push
+            update = false;
+            quadrant = 1;
+            chassis.setPose(144 - safeDistanceInchesX(rightDS) - 4.5, 24, 0);
+
+            intakeAll = true;
+            chassis.moveToPoint(144-48,52,1000);
+            pros::delay(500);
+            tongue.set_value(true);
+            chassis.waitUntilDone();
+            chassis.turnToHeading(125,1000);
+            chassis.waitUntilDone();
+            chassis.moveToPoint(144-24, 30, 1000, {.maxSpeed = 80});
+            chassis.waitUntilDone();
+            chassis.turnToHeading(-180, 750, {.maxSpeed = 100});
+            update = true;
+            chassis.waitUntilDone();
+            chassis.moveToPoint(144-23, 11, 1250, {.maxSpeed = 80});
+            chassis.waitUntilDone();
+            chassis.moveToPoint(144-24, 45, 1000, {.forwards = false});
+            chassis.waitUntilDone();
+            leftMotors.move(-80);
+            rightMotors.move(-80);
+            hood.set_value(true);
+            hoodUp = true;
+            tongue.set_value(false);
+            update = false;
+            pros::delay(1000);
+            leftMotors.move(0);
+            rightMotors.move(0);
+            pros::delay(100);
+            chassis.moveToPoint(144-24, 30, 750);
+            chassis.waitUntilDone();
+            chassis.turnToHeading(90, 750);
+            chassis.waitUntilDone();
+            update = true;
+            chassis.moveToPoint(144-34, 31, 750, {.forwards = false});
+            chassis.waitUntilDone();
+            chassis.turnToHeading(180, 750, {.maxSpeed = 100});
+            chassis.waitUntilDone();
+            chassis.moveToPoint(144-35, 53, 750, {.forwards = false, .minSpeed = 100});
+            chassis.waitUntilDone();
+            chassis.turnToHeading(160, 750, {.minSpeed = 127});
+            chassis.waitUntilDone();
+            leftMotors.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+            rightMotors.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+            break;
+        case 4:
+            // Left 4+3 double descore
+            update = true;
+            quadrant = 4;
+            chassis.setPose(54, 24, -90);
+
+            intakeAll = true;
+            chassis.moveToPoint(24, chassis.getPose().y, 1000);
+            chassis.waitUntilDone();
+            chassis.turnToHeading(180, 500);
+            tongue.set_value(true);
+            chassis.waitUntilDone();
+            chassis.moveToPoint(23, 11, 1000, {.maxSpeed = 80});
+            chassis.waitUntilDone();
+            chassis.moveToPoint(23, 45, 900, {.forwards = false});
+
+            chassis.waitUntilDone();
+            leftMotors.move(-80);
+            rightMotors.move(-80);
+            hood.set_value(true);
+            hoodUp = true;
+            tongue.set_value(false);
+            pros::delay(1000);
+            hood.set_value(false);
+            hoodUp = false;
+
+            chassis.moveToPoint(23, 23, 750);
+            chassis.waitUntilDone();
+            update = false;
+            chassis.turnToHeading(45, 750, {.maxSpeed = 100});
+            chassis.waitUntilDone();
+            chassis.moveToPoint(50, 50, 1000, {.maxSpeed = 80});
+            pros::delay(650);
+            tongue.set_value(true);
+            chassis.waitUntilDone();
+            chassis.turnToHeading(-135, 750, {.maxSpeed = 100});
+            chassis.waitUntilDone();
+            chassis.moveToPoint(61, 66, 1000, {.forwards = false, .maxSpeed = 80});
+            pros::delay(800);
+            intakeAll = false;
+            lowGoal = true;
+            chassis.waitUntilDone();
+            lowGoal = false;
+            midGoalAll = true;
+            pros::delay(1000);
+            tongue.set_value(false);
+
+            chassis.moveToPoint(35, 35, 1000, {.maxSpeed = 80});
+            chassis.waitUntilDone();
+            chassis.turnToHeading(0, 750, {.maxSpeed = 100});
+            chassis.waitUntilDone();
+            chassis.moveToPoint(34, 50, 750, {.minSpeed = 127});
+            chassis.waitUntilDone();
+
+
+            break;
+        case 5:
+            // Right 4+3
+            update = false;
+            quadrant = 1;
+            chassis.setPose(144-53, 24, 0); // 144 - safeDistanceInchesX(rightDS) - 4.5
+
+            intakeAll = true;
+            chassis.moveToPoint(144-48,53,1000);
+            pros::delay(500);
+            tongue.set_value(true);
+            chassis.waitUntilDone();
+            chassis.turnToHeading(-45,1000, {.maxSpeed = 100});
+            chassis.waitUntilDone();
+            tongue.set_value(false);
+            chassis.moveToPoint(144-61, 66, 1000);
+            chassis.waitUntilDone();
+            intakeAll = false;
+            lowGoal = true;
+            firstStage.set_value(true);
+            pros::delay(1000);
+            chassis.moveToPoint(144-25, 30, 1500, {.forwards = false, .maxSpeed = 80});
+            lowGoal = false;
+            intakeAll = true;
+            firstStage.set_value(false);
+            chassis.waitUntilDone();
+            tongue.set_value(true);
+            chassis.turnToHeading(-180, 750, {.maxSpeed = 100});
+            update = true;
+            chassis.waitUntilDone();
+            chassis.moveToPoint(144-23, 11, 1250, {.maxSpeed = 80});
+            chassis.waitUntilDone();
+            chassis.moveToPoint(144-24, 45, 1000, {.forwards = false});
+            chassis.waitUntilDone();
+            leftMotors.move(-80);
+            rightMotors.move(-80);
+            hood.set_value(true);
+            hoodUp = true;
+            tongue.set_value(false);
+            update = false;
+            pros::delay(1000);
+            leftMotors.move(0);
+            rightMotors.move(0);
+            pros::delay(100);
+            chassis.moveToPoint(144-24, 30, 750);
+            chassis.waitUntilDone();
+            chassis.turnToHeading(90, 750);
+            chassis.waitUntilDone();
+            chassis.moveToPoint(144-36, 30, 750, {.forwards = false});
+            chassis.waitUntilDone();
+            chassis.turnToHeading(180, 750, {.maxSpeed = 100});
+            chassis.waitUntilDone();
+            chassis.moveToPoint(144-36, 53, 750, {.forwards = false, .minSpeed = 100});
+            chassis.waitUntilDone();
+            leftMotors.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+            rightMotors.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+            break;
+        case 6:
+            // All mid goal SAWP
+            update = false;
+            chassis.setPose(144-54, 24, 90);
+
+            chassis.moveToPoint(144-24, 24, 1000);
+            chassis.waitUntilDone();
+            chassis.turnToHeading(180, 500);
+            update = true;
+            intakeAll = true;
+            tongue.set_value(true);
+            chassis.waitUntilDone();
+            chassis.moveToPoint(144-24, 11, 900, {.maxSpeed = 80});
+            chassis.waitUntilDone();
+            chassis.moveToPoint(144-24, 45, 900, {.forwards = false});
+            chassis.waitUntilDone();
+            leftMotors.move(-80);
+            rightMotors.move(-80);
+            hood.set_value(true);
+            hoodUp = true;
+            tongue.set_value(false);
+            update = false;
+            pros::delay(1000);
+            leftMotors.move(0);
+            rightMotors.move(0);
+            pros::delay(100);
+            hood.set_value(false);
+            hoodUp = false;
+
+            chassis.moveToPoint(chassis.getPose().x, 23, 1000); // 144-24
+            chassis.waitUntilDone();
+            chassis.turnToHeading(-45, 750, {.maxSpeed = 100});
+            chassis.waitUntilDone();
+            chassis.moveToPoint(144-48, 48, 1000, {.maxSpeed = 80});
+            pros::delay(650);
+            tongue.set_value(true);
+            chassis.turnToHeading(-45, 500);
+            chassis.waitUntilDone();
+            tongue.set_value(false);
+            chassis.moveToPoint(144-61, 61, 1000, {.maxSpeed = 80});
+            chassis.waitUntilDone();
+            intakeAll = false;
+            lowGoal = true;
+            firstStage.set_value(true);
+            pros::delay(1000);
+            chassis.moveToPoint(144-48, 48, 750, {.forwards = false, .maxSpeed = 80});
+            lowGoal = false;
+            intakeAll = true;
+            firstStage.set_value(false);
+            chassis.waitUntilDone();
+
+            chassis.turnToHeading(-90, 750, {.maxSpeed = 100});
+            update = true;
+            chassis.waitUntilDone();
+            chassis.moveToPoint(48, 48, 1200, {.maxSpeed = 100});
+            pros::delay(900);
+            tongue.set_value(true);
+            pros::delay(300);
+            chassis.waitUntilDone();
+            chassis.turnToHeading(-140, 500, {.maxSpeed = 100});
+            chassis.waitUntilDone();
+            chassis.moveToPoint(59, 62, 500, {.forwards = false, .maxSpeed = 80});
+            pros::delay(200);
+            intakeAll = false;
+            lowGoal = true;
+            pros::delay(300);
+            lowGoal = false;
+            chassis.waitUntilDone();
+            lowGoal = false;
+            midGoalAll = true;
+
+            break;
+        case 7:
+            // Reg SAWP
+            update = false;
+            chassis.setPose(144-54, 24, 90);
+
+            chassis.moveToPoint(144-24, 24, 1000);
+            chassis.waitUntilDone();
+            chassis.turnToHeading(180, 500);
+            update = true;
+            intakeAll = true;
+            tongue.set_value(true);
+            chassis.waitUntilDone();
+            chassis.moveToPoint(144-24, 11, 900, {.maxSpeed = 80});
+            chassis.waitUntilDone();
+            chassis.moveToPoint(144-24, 45, 900, {.forwards = false});
+            chassis.waitUntilDone();
+            leftMotors.move(-80);
+            rightMotors.move(-80);
+            hood.set_value(true);
+            hoodUp = true;
+            tongue.set_value(false);
+            update = false;
+            pros::delay(1000);
+            leftMotors.move(0);
+            rightMotors.move(0);
+            pros::delay(100);
+            hood.set_value(false);
+            hoodUp = false;
+
+            chassis.moveToPoint(chassis.getPose().x, 23, 750); // 144-24
+            chassis.waitUntilDone();
+            chassis.turnToHeading(-45, 500, {.maxSpeed = 100});
+            chassis.waitUntilDone();
+            chassis.moveToPoint(144-48, 48, 1000, {.maxSpeed = 80});
+            pros::delay(650);
+            tongue.set_value(true);
+            chassis.waitUntilDone();
+
+            chassis.turnToHeading(-90, 500);
+            update = true;
+            chassis.waitUntilDone();
+            tongue.set_value(false);
+            chassis.moveToPoint(48, 48, 1000, {.maxSpeed = 100});
+            pros::delay(900);
+            tongue.set_value(true);
+            chassis.waitUntilDone();
+            chassis.turnToHeading(-140, 500);
+            chassis.waitUntilDone();
+            chassis.moveToPoint(59, 62, 500, {.forwards = false, .maxSpeed = 80});
+            pros::delay(200);
+            intakeAll = false;
+            lowGoal = true;
+            pros::delay(300);
+            lowGoal = false;
+            chassis.waitUntilDone();
+            lowGoal = false;
+            midGoalAll = true;
+            pros::delay(700);
+            midGoalAll = false;
+            intakeAll = true;
+
+            quadrant = 4;
+            chassis.moveToPoint(24, 24, 1000, {.maxSpeed = 100});
+            chassis.waitUntilDone();
+            chassis.turnToHeading(180, 500);
+            chassis.waitUntilDone();
+            chassis.moveToPoint(24, 11, 1000, {.maxSpeed = 80});
+            chassis.waitUntilDone();
+
+            chassis.moveToPoint(24, 45, 900, {.forwards = false});
+            chassis.waitUntilDone();
+            leftMotors.move(-80);
+            rightMotors.move(-80);
+            hood.set_value(true);
+            hoodUp = true;
+            tongue.set_value(false);
+
             break;
     }
     
@@ -371,12 +732,25 @@ void autonomous() {
 //     counterRoller.move(0);
 // }
 
+// pros::adi::DigitalOut tongue('G');
+// pros::adi::DigitalOut frontWing('A');
+// pros::adi::DigitalOut backWing('H');
+// pros::adi::DigitalOut hood('F');
+// pros::adi::DigitalOut firstStage('D');
+// pros::adi::DigitalOut midGoalDescore('H');
+
 void opcontrol() {
     bool tongueOut = false;
     bool frontWingUp = false;
     bool backWingUp = false;
-    bool doubleOut = false;
-    bool gatesOut = false;
+    bool hoodPistonUp = false;
+    bool firstStageUp = false;
+    bool midGoalDescoreUp = false;
+    bool BUp = false;
+    bool CUp = false;
+
+    leftMotors.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
+    rightMotors.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
 
     // loop forever
     while (true) {
@@ -451,13 +825,16 @@ void opcontrol() {
 
         if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_B)) {
             frontWingUp = !frontWingUp;
-            pros::delay(150);
-        } else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_X)) { 
+            pros::delay(250);
+        } else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_DOWN)) { 
             backWingUp = !backWingUp;
-            pros::delay(150);
+            pros::delay(250);
         } else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_A)) { 
             tongueOut = !tongueOut;
-            pros::delay(150);
+            pros::delay(250);
+        } else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_Y)) { 
+            midGoalDescoreUp = !midGoalDescoreUp;
+            pros::delay(250);
         }
 
         if (frontWingUp) {
@@ -477,6 +854,66 @@ void opcontrol() {
         } else {
             tongue.set_value(false);
         }
+
+        if (midGoalDescoreUp) {
+            midGoalDescore.set_value(true);
+        } else {
+            midGoalDescore.set_value(false);
+        }
+
+
+
+        // piston testing
+        // pros::adi::DigitalOut tongue('G');
+        // pros::adi::DigitalOut frontWing('A');
+        // pros::adi::DigitalOut backWing('E');
+        // pros::adi::DigitalOut hood('F');
+        // pros::adi::DigitalOut firstStage('D');
+        // pros::adi::DigitalOut midGoalDescore('H');
+        // pros::adi::DigitalOut B('B');
+        // pros::adi::DigitalOut C('C');
+
+        // if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_A)) {
+        //     frontWingUp = !frontWingUp;
+        //     frontWing.set_value(frontWingUp);
+        //     controller.set_text(0,0,"A");
+        //     pros::delay(150);
+        // } else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_B)) { 
+        //     backWingUp = !backWingUp;
+        //     backWing.set_value(backWingUp);
+        //     controller.set_text(0,0,"E");
+        //     pros::delay(150);
+        // } else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_X)) { 
+        //     tongueOut = !tongueOut;
+        //     tongue.set_value(tongueOut);
+        //     controller.set_text(0,0,"G");
+        //     pros::delay(150);
+        // } else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_Y)) {
+        //     hoodPistonUp = !hoodPistonUp;
+        //     hood.set_value(hoodPistonUp);
+        //     controller.set_text(0,0,"F");
+        //     pros::delay(150);
+        // } else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L1)) {
+        //     firstStageUp = !firstStageUp;
+        //     firstStage.set_value(firstStageUp);
+        //     controller.set_text(0,0,"D");
+        //     pros::delay(150);
+        // } else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2)) {
+        //     midGoalDescoreUp = !midGoalDescoreUp;
+        //     midGoalDescore.set_value(midGoalDescoreUp);
+        //     controller.set_text(0,0,"H");
+        //     pros::delay(150);
+        // } else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1)) {
+        //     BUp = !BUp;
+        //     B.set_value(BUp);
+        //     controller.set_text(0,0,"B");
+        //     pros::delay(150);
+        // } else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2)) {
+        //     CUp = !CUp;
+        //     C.set_value(CUp);
+        //     controller.set_text(0,0,"C");
+        //     pros::delay(150);
+        // }
 
         // delay to save resources
         pros::delay(5);
